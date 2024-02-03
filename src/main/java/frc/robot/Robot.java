@@ -31,7 +31,7 @@
 */
 
 
-
+ 
 
 
 
@@ -57,10 +57,24 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 // import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.CANSparkBase;
+import com.revrobotics.CANSparkBase.IdleMode;
+import com.revrobotics.CANSparkMax;
+/*last three are from everybot library
+- Damien H.
+*/
 
 // import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;  // This lib is being depreciated
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+/*last five are from everybot library
+-Damien H.
+*/
 
 
 
@@ -97,6 +111,14 @@ System.out.println("i work"+i);
 
   }
 
+  private static final String kNothingAuto = "do nothing";
+  private static final String kLaunchAndDrive = "launch drive";
+  private static final String kLaunch = "launch";
+  private static final String kDrive = "drive";
+  private String m_autoSelected;
+ 
+ 
+
   /*static double RampNum (double rampIncriment,double initialValue,double targetValue) {
     if (targetValue > initialValue) {
       return (initialValue + rampIncriment);
@@ -132,12 +154,135 @@ System.out.println("i work"+i);
     m_motorcontroller4.follow(m_motorcontroller3);
   }
 
+  /* This function is run when the robot is first started up and should be used for any
+  * initialization code.
+  */
+ 
+
+  /* Both of the motors used on the KitBot launcher are CIMs which are brushed motors
+  */
+ CANSparkBase m_launchWheel = new CANSparkMax(6, MotorType.kBrushed);
+ CANSparkBase m_feedWheel = new CANSparkMax(5, MotorType.kBrushed);
+
+
+ /**
+  * Roller Claw motor controller instance.
+ */
+ CANSparkBase m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
+ /**
+  * Climber motor controller instance. In the stock Everybot configuration a
+  * NEO is used, replace with kBrushed if using a brushed motor.
+  */
+ CANSparkBase m_climber = new CANSparkMax(7, MotorType.kBrushless);
+
+
+   /**
+  * The starter code uses the most generic joystick class.
+  *
+  * To determine which button on your controller corresponds to which number, open the FRC
+  * driver station, go to the USB tab, plug in a controller and see which button lights up
+  * when pressed down
+  *
+  * Buttons index from 0
+  */
+
+    /*above is the launcher code from the everybot, IDK where exactly this goes but this is my best guess 
+        -Damien H.
+     */
+
+
+ Joystick m_driverController = new Joystick(0);
+
+
+
+
+ Joystick m_manipController = new Joystick(1);
+
+ /*i think we will have to assign the joystick IDs ourselves
+  - Damien H.
+  */
+
+   // --------------- Magic numbers. Use these to adjust settings. ---------------
+
+
+/**
+  * How many amps can an individual drivetrain motor use.
+  */
+ static final int DRIVE_CURRENT_LIMIT_A = 60;
+
+
+ /**
+  * How many amps the feeder motor can use.
+  */
+ static final int FEEDER_CURRENT_LIMIT_A = 80;
+
+
+ /**
+  * Percent output to run the feeder when expelling note
+  */
+ static final double FEEDER_OUT_SPEED = 1.0;
+
+
+ /**
+  * Percent output to run the feeder when intaking note
+  */
+ static final double FEEDER_IN_SPEED = -.4;
+
+
+ /**
+  * Percent output for amp or drop note, configure based on polycarb bend
+  */
+ static final double FEEDER_AMP_SPEED = .4;
+
+
+ /**
+  * How many amps the launcher motor can use.
+  *
+  * In our testing we favored the CIM over NEO, if using a NEO lower this to 60
+  */
+ static final int LAUNCHER_CURRENT_LIMIT_A = 80;
+
+
+ /**
+  * Percent output to run the launcher when intaking AND expelling note
+  */
+ static final double LAUNCHER_SPEED = 1.0;
+
+
+ /**
+  * Percent output for scoring in amp or dropping note, configure based on polycarb bend
+  * .14 works well with no bend from our testing
+  */
+ static final double LAUNCHER_AMP_SPEED = .17;
+ /**
+  * Percent output for the roller claw
+  */
+ static final double CLAW_OUTPUT_POWER = .5;
+ /**
+  * Percent output to help retain notes in the claw
+  */
+ static final double CLAW_STALL_POWER = .1;
+ /**
+  * Percent output to power the climber
+  */
+ static final double CLIMER_OUTPUT_POWER = 1;
+
+
+ /**
+
+/* settings for launcher from everybot code
+ -Damien H.
+ */
+
+
+
   /** This function is run once each time the robot enters autonomous mode. */
   @Override
   public void autonomousInit() {
     m_timer.restart();
     //testMethod(137);
   }
+  
 
   /** This function is called periodically during autonomous. */
   @Override

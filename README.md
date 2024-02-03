@@ -23,12 +23,14 @@ Robot code for 2024 FRC game
 *        !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *
 *        Version  |  Developer   |   Comments About Changes
-*        _________|______________|___________________________________________________________________________________________________________
+_________________________________________________________________________________________________________
 *         V1      |  ALL         |   Initial commit. Imported code from summer drivetrain code
-*
+*         V1.0.1  | Damien H.    |   Added library elements and a portiom of topworks code
+                                     from everybot's code.
+*                                   
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *    !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *                  !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *
-*
-*/
+*  
+*/ 
