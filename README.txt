@@ -23,14 +23,17 @@ Robot code for 2024 FRC game
 *        !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *
 *        Version  |  Developer   |   Comments About Changes
-_________________________________________________________________________________________________________
-*         V1      |  ALL         |   Initial commit. Imported code from summer drivetrain code
-*         V1.0.1  | Damien H.    |   Added library elements and a portiom of topworks code
-                                     from everybot's code.
-*                                   
+*        _________|______________|___________________________________________________________________________________________________________
+*         V1      |  RAT         |   Initial commit. Has basic framework for drivetrain
+*         V1.0.1  | Damien H.    |      Added library elements and a portiom of topworks 
+*                 |              |      code from everybot's code.
+*         V1.1.0  | Damien H.    |   Finished adding evereybot topworks code. Hasnt been
+*                 | Quaid        |      tested on the bot yet. Likely has button mapping
+*                 |              |      conflicts.
+*                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *    !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *                  !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *
-*  
-*/ 
+*
+*/

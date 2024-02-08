@@ -22,8 +22,11 @@
 *        Version  |  Developer   |   Comments About Changes
 *        _________|______________|___________________________________________________________________________________________________________
 *         V1      |  RAT         |   Initial commit. Has basic framework for drivetrain
-*         V1.0.1  | Damien H.    |   Added library elements and a portiom of topworks code
-                                     from everybot's code.
+*         V1.0.1  | Damien H.    |      Added library elements and a portiom of topworks 
+*                 |              |      code from everybot's code.
+*         V1.1.0  | Damien H.    |   Finished adding evereybot topworks code. Hasnt been
+*                 | Quaid        |      tested on the bot yet. Likely has button mapping
+*                 |              |      conflicts.
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *    !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -31,6 +34,15 @@
 *
 *
 */
+
+
+
+/**
+ * TODO/NOTES:
+ * 
+ * Test on robot
+ * check button mapping
+ */
 
 
  
@@ -108,7 +120,7 @@ public class Robot extends TimedRobot {
   double previousLeftMotorSpeed = 0;
   double previousRightMotorSpeed = 0;
 
-  static void testMethod (int i) {
+  static void testMethod (int i) {   // todo: Remove
 System.out.println("i work"+i);
 
   }
@@ -118,9 +130,10 @@ System.out.println("i work"+i);
   private static final String kLaunch = "launch";
   private static final String kDrive = "drive";
   private String m_autoSelected;
+  private final SendableChooser<String> m_chooser = new SendableChooser<>();
  
  
-
+    // fixme: fix ramp fnc
   /*static double RampNum (double rampIncriment,double initialValue,double targetValue) {
     if (targetValue > initialValue) {
       return (initialValue + rampIncriment);
@@ -151,9 +164,43 @@ System.out.println("i work"+i);
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
     // m_rightDrive.setInverted(true);
-    m_motorcontroller3.setInverted(true);
+    m_motorcontroller1.setInverted(false);
+    m_motorcontroller3.setInverted(true);  // only invert this one because the otheer follows note:
+
+    m_feedWheel.setInverted(true);
+    m_launchWheel.setInverted(true);
+
+    m_rollerClaw.setInverted(false);
+    m_climber.setInverted(false);
+
     m_motorcontroller2.follow(m_motorcontroller1);
     m_motorcontroller4.follow(m_motorcontroller3);
+    m_chooser.setDefaultOption("do nothing", kNothingAuto);
+    m_chooser.addOption("launch note and drive", kLaunchAndDrive);
+    m_chooser.addOption("launch", kLaunch);
+    m_chooser.addOption("drive", kDrive);
+    SmartDashboard.putData("Auto choices", m_chooser);
+
+    /*
+     * Apply the current limit to the drivetrain motors
+     */
+    m_motorcontroller1.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
+    m_motorcontroller2.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
+    m_motorcontroller3.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
+    m_motorcontroller4.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
+
+    m_feedWheel.setSmartCurrentLimit(FEEDER_CURRENT_LIMIT_A);
+    m_launchWheel.setSmartCurrentLimit(LAUNCHER_CURRENT_LIMIT_A);
+
+    m_rollerClaw.setSmartCurrentLimit(60);
+    m_climber.setSmartCurrentLimit(60);
+
+    m_rollerClaw.setIdleMode(IdleMode.kBrake);
+    m_climber.setIdleMode(IdleMode.kBrake);
+  }
+
+  public void robotPeriodic() {
+    SmartDashboard.putNumber("Time (seconds)", Timer.getFPGATimestamp());
   }
 
   /* This function is run when the robot is first started up and should be used for any
@@ -276,47 +323,96 @@ System.out.println("i work"+i);
  -Damien H.
  */
 
+ double AUTO_LAUNCH_DELAY_S;
+ double AUTO_DRIVE_DELAY_S;
 
+ double AUTO_DRIVE_TIME_S;
+
+ double AUTO_DRIVE_SPEED;
+ double AUTO_LAUNCHER_SPEED;
+
+ double autonomousStartTime;
 
   /** This function is run once each time the robot enters autonomous mode. */
   @Override
   public void autonomousInit() {
-    m_timer.restart();
-    //testMethod(137);
+    m_autoSelected = m_chooser.getSelected();
+
+    m_motorcontroller1.setIdleMode(IdleMode.kBrake);
+    m_motorcontroller2.setIdleMode(IdleMode.kBrake);
+    m_motorcontroller3.setIdleMode(IdleMode.kBrake);
+    m_motorcontroller4.setIdleMode(IdleMode.kBrake);
+
+    AUTO_LAUNCH_DELAY_S = 2;
+    AUTO_DRIVE_DELAY_S = 3;
+
+    AUTO_DRIVE_TIME_S = 2.0;
+    AUTO_DRIVE_SPEED = -0.5;
+    AUTO_LAUNCHER_SPEED = 1;
+
+    if (m_autoSelected == kLaunch) {
+      AUTO_DRIVE_SPEED = 0;
+
+    } else if (m_autoSelected == kDrive) {
+      AUTO_LAUNCHER_SPEED = 0;
+
+    } else if (m_autoSelected == kNothingAuto) {
+      AUTO_DRIVE_SPEED = 0;
+      AUTO_LAUNCHER_SPEED = 0;
+    }
+
+    autonomousStartTime = Timer.getFPGATimestamp();
   }
   
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    // Drive for 2 seconds
-    if (m_timer.get() < 1.0) {
-      // Drive forwards half speed, make sure to turn input squaring off
-      m_robotDrive.tankDrive(0.4, 0.5, false);
-    }else if(m_timer.get() >= 1.0 && m_timer.get() < 3.0){
-      m_robotDrive.stopMotor();
-    } else if(m_timer.get() >= 3.0 && m_timer.get() < 4.2) {
-      m_robotDrive.tankDrive(0.1, 0.4, false);
-    } else if(m_timer.get() >= 4.2 && m_timer.get() < 6.0) {
-      m_robotDrive.stopMotor();
-    } else if(m_timer.get() >= 6.0 && m_timer.get() < 7.0) {
-      m_robotDrive.tankDrive(0.4, 0.5, false);
-    } else if(m_timer.get() >= 7.0 && m_timer.get() < 8.0) {
-      m_robotDrive.stopMotor();
-    } else if(m_timer.get() >= 8.0 && m_timer.get() < 8.6) {
-      m_robotDrive.tankDrive(0.4, 0.5, false);
-    } else if(m_timer.get() >= 8.6 && m_timer.get() < 9.0) {
-      m_robotDrive.stopMotor();
 
-    } else{
-      m_robotDrive.stopMotor(); // stop robot*
+    double timeElapsed = Timer.getFPGATimestamp() - autonomousStartTime;
+
+    /*
+     * Spins up launcher wheel until time spent in auto is greater than AUTO_LAUNCH_DELAY_S
+     *
+     * Feeds note to launcher until time is greater than AUTO_DRIVE_DELAY_S
+     *
+     * Drives until time is greater than AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S
+     *
+     * Does not move when time is greater than AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S
+     */
+    if(timeElapsed < AUTO_LAUNCH_DELAY_S)
+    {
+      m_launchWheel.set(AUTO_LAUNCHER_SPEED);
+      m_robotDrive.arcadeDrive(0, 0);
+
     }
+    else if(timeElapsed < AUTO_DRIVE_DELAY_S)
+    {
+      m_feedWheel.set(AUTO_LAUNCHER_SPEED);
+      m_robotDrive.arcadeDrive(0, 0);
+    }
+    else if(timeElapsed < AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S)
+    {
+      m_launchWheel.set(0);
+      m_feedWheel.set(0);
+      m_robotDrive.arcadeDrive(AUTO_DRIVE_SPEED, 0);
+    }
+    else
+    {
+      m_robotDrive.arcadeDrive(0, 0);
+    }
+    /* For an explanation on differintial drive, squaredInputs, arcade drive and tank drive see the bottom of this file */
   }
   
 
   /** This function is called once each time the robot enters teleoperated mode. */
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    m_motorcontroller1.setIdleMode(IdleMode.kCoast);
+    m_motorcontroller2.setIdleMode(IdleMode.kCoast);
+    m_motorcontroller3.setIdleMode(IdleMode.kCoast);
+    m_motorcontroller4.setIdleMode(IdleMode.kCoast);
+  }
 
   /** This function is called periodically during teleoperated mode. */
   @Override
@@ -372,7 +468,107 @@ System.out.println("i work"+i);
     } else {
       m_robotDrive.stopMotor(); // stop robot
     }
-    
+
+
+
+
+
+    /////////////////
+    /*Topworks code*/
+    /*
+     * Spins up the launcher wheel
+     */
+    if (m_manipController.getRawButton(1)) {
+      m_launchWheel.set(LAUNCHER_SPEED);
+    }
+    else if(m_manipController.getRawButtonReleased(1))
+    {
+      m_launchWheel.set(0);
+    }
+
+    /*
+     * Spins feeder wheel, wait for launch wheel to spin up to full speed for best results
+     */
+    if (m_manipController.getRawButton(6))
+    {
+      m_feedWheel.set(FEEDER_OUT_SPEED);
+    }
+    else if(m_manipController.getRawButtonReleased(6))
+    {
+      m_feedWheel.set(0);
+    }
+
+    /*
+     * While the button is being held spin both motors to intake note
+     */
+    if(m_manipController.getRawButton(5))
+    {
+      m_launchWheel.set(-LAUNCHER_SPEED);
+      m_feedWheel.set(FEEDER_IN_SPEED);
+    }
+    else if(m_manipController.getRawButtonReleased(5))
+    {
+      m_launchWheel.set(0);
+      m_feedWheel.set(0);
+    }
+
+    /*
+     * While the amp button is being held, spin both motors to "spit" the note
+     * out at a lower speed into the amp
+     *
+     * (this may take some driver practice to get working reliably)
+     */
+    if(m_manipController.getRawButton(2))
+    {
+      m_feedWheel.set(FEEDER_AMP_SPEED);
+      m_launchWheel.set(LAUNCHER_AMP_SPEED);
+    }
+    else if(m_manipController.getRawButtonReleased(2))
+    {
+      m_feedWheel.set(0);
+      m_launchWheel.set(0);
+    }
+
+    /**
+     * Hold one of the two buttons to either intake or exjest note from roller claw
+     * 
+     * One button is positive claw power and the other is negative
+     * 
+     * It may be best to have the roller claw passively on throughout the match to 
+     * better retain notes but we did not test this
+     */ 
+    if(m_manipController.getRawButton(3))
+    {
+      m_rollerClaw.set(CLAW_OUTPUT_POWER);
+    }
+    else if(m_manipController.getRawButton(4))
+    {
+      m_rollerClaw.set(-CLAW_OUTPUT_POWER);
+    }
+    else
+    {
+      m_rollerClaw.set(0);
+    }
+
+    /**
+     * POV is the D-PAD (directional pad) on your controller, 0 == UP and 180 == DOWN
+     * 
+     * After a match re-enable your robot and unspool the climb
+     */
+    if(m_manipController.getPOV() == 0)
+    {
+      m_climber.set(1);
+    }
+    else if(m_manipController.getPOV() == 180)
+    {
+      m_climber.set(-1);
+    }
+    else
+    {
+      m_climber.set(0);
+    }
+    /*Topworks code*/
+    /////////////////
   } 
 
   /** This function is called once each time the robot enters test mode. */
