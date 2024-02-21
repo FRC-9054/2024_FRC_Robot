@@ -1,7 +1,7 @@
 
 
 
-/*     VERSION HISTORY
+/**    VERSION HISTORY
 *           First number in the version number should only increase if the overall structure of
 *                    the code changes. The code should remain functionally the same. If the
 *                   first number changes, there should be no other changes to the code and the
@@ -27,6 +27,7 @@
 *         V1.1.0  | Damien H.    |   Finished adding evereybot topworks code. Hasnt been
 *                 | Quaid        |      tested on the bot yet. Likely has button mapping
 *                 |              |      conflicts.
+*         V1.1.1  | Damien H.    |   Remapped robot controls to driver's liking.
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *    !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -71,9 +72,11 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 // import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkMax;
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 /*last three are from everybot library
 - Damien H.
 */
@@ -114,11 +117,35 @@ public class Robot extends TimedRobot {
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_motorcontroller1, m_motorcontroller3);
   private final static Joystick m_controller = new Joystick(0);
   private final Timer m_timer = new Timer();
+  // NOTE: variables
+  // vvvvvvvvvvvvvvv
   boolean arcadeActive;
   boolean previousMode;
   double previousArcadeMotorSpeed = 0;
   double previousLeftMotorSpeed = 0;
   double previousRightMotorSpeed = 0;
+
+  // note: button functions
+  // vvvvvvvvvvvvvvvvvvvvvv
+  int drivetrainRotateAxis = 0;
+  int drivetrainSpeedAxis = 5;
+  // int rightAxis = 1;
+  // int leftAxis =4;
+
+  int ampFunctionButton = 10;
+  int intakeFunctionButton = 4;
+  int feedwheelFunctionButton = 6;
+  int launchwheelFunctionButton = 3;
+
+  
+  int elevatorExtendFunctionButton = 0; // this is a position on the POV. Must be 0, 45, 90, 135, 180, 225, 270, or 315. front = 0   right = 90   back = 180   left = 270
+  int elevatorRetractFunctionButton = 180; // this is a position on the POV. Must be 0, 45, 90, 135, 180, 225, 270, or 315. front = 0   right = 90   back = 180   left = 270
+
+  // note: tunables
+  // vvvvvvvvvvvvvv
+  Double motorSpeedLimit = -0.50;   // note: why are we inverting the speed limmit and each controler input?
+
+
 
   static void testMethod (int i) {   // todo: Remove
 System.out.println("i work"+i);
@@ -170,7 +197,7 @@ System.out.println("i work"+i);
     m_feedWheel.setInverted(true);
     m_launchWheel.setInverted(true);
 
-    m_rollerClaw.setInverted(false);
+    // m_rollerClaw.setInverted(false);
     m_climber.setInverted(false);
 
     m_motorcontroller2.follow(m_motorcontroller1);
@@ -189,13 +216,13 @@ System.out.println("i work"+i);
     m_motorcontroller3.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
     m_motorcontroller4.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
 
-    m_feedWheel.setSmartCurrentLimit(FEEDER_CURRENT_LIMIT_A);
-    m_launchWheel.setSmartCurrentLimit(LAUNCHER_CURRENT_LIMIT_A);
+    // m_feedWheel.setSmartCurrentLimit(FEEDER_CURRENT_LIMIT_A);
+    // m_launchWheel.setSmartCurrentLimit(LAUNCHER_CURRENT_LIMIT_A);
 
-    m_rollerClaw.setSmartCurrentLimit(60);
+    // m_rollerClaw.setSmartCurrentLimit(60);
     m_climber.setSmartCurrentLimit(60);
 
-    m_rollerClaw.setIdleMode(IdleMode.kBrake);
+    // m_rollerClaw.setIdleMode(IdleMode.kBrake);
     m_climber.setIdleMode(IdleMode.kBrake);
   }
 
@@ -210,19 +237,21 @@ System.out.println("i work"+i);
 
   /* Both of the motors used on the KitBot launcher are CIMs which are brushed motors
   */
- CANSparkBase m_launchWheel = new CANSparkMax(6, MotorType.kBrushed);
- CANSparkBase m_feedWheel = new CANSparkMax(5, MotorType.kBrushed);
+  CANSparkBase m_launchWheel = new CANSparkMax(7, MotorType.kBrushed);
+  // private final WPI_VictorSPX m_feedWheel = new WPI_VictorSPX(31);
+  
+ CANSparkBase m_feedWheel = new CANSparkMax(8, MotorType.kBrushed);
 
 
  /**
   * Roller Claw motor controller instance.
  */
- CANSparkBase m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
+//  CANSparkBase m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
  /**
   * Climber motor controller instance. In the stock Everybot configuration a
   * NEO is used, replace with kBrushed if using a brushed motor.
   */
- CANSparkBase m_climber = new CANSparkMax(7, MotorType.kBrushless);
+ CANSparkBase m_climber = new CANSparkMax(6, MotorType.kBrushless);
 
 
    /**
@@ -240,12 +269,12 @@ System.out.println("i work"+i);
      */
 
 
- Joystick m_driverController = new Joystick(0);
+//  Joystick m_driverController = new Joystick(0);
 
 
 
 
- Joystick m_manipController = new Joystick(1);
+//  Joystick m_controller = new Joystick(0);
 
  /*i think we will have to assign the joystick IDs ourselves
   - Damien H.
@@ -275,15 +304,15 @@ System.out.println("i work"+i);
  /**
   * Percent output to run the feeder when intaking note
   */
- static final double FEEDER_IN_SPEED = -.4;
+ static final double FEEDER_IN_SPEED = .4;
 
-
+ static final double LAUNCHER_IN_SPEED = .4;
  /**
   * Percent output for amp or drop note, configure based on polycarb bend
   */
  static final double FEEDER_AMP_SPEED = .4;
 
-
+  
  /**
   * How many amps the launcher motor can use.
   *
@@ -302,7 +331,7 @@ System.out.println("i work"+i);
   * Percent output for scoring in amp or dropping note, configure based on polycarb bend
   * .14 works well with no bend from our testing
   */
- static final double LAUNCHER_AMP_SPEED = .17;
+ static final double LAUNCHER_AMP_SPEED = .10;
  /**
   * Percent output for the roller claw
   */
@@ -362,6 +391,7 @@ System.out.println("i work"+i);
     }
 
     autonomousStartTime = Timer.getFPGATimestamp();
+
   }
   
 
@@ -417,83 +447,108 @@ System.out.println("i work"+i);
   /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
-   
-    boolean AButtonPos;
-    boolean BButtonPos;
-    previousMode = arcadeActive;
-    AButtonPos = m_controller.getRawButton(1);
-    BButtonPos = m_controller.getRawButton(2);
-    //previousArcadeMotorSpeed = RampNum(.4, previousArcadeMotorSpeed, -m_controller.getRawAxis(1));
-    //previousLeftMotorSpeed = RampNum(0.4, previousLeftMotorSpeed, -m_controller.getRawAxis(1));
-    //previousRightMotorSpeed = RampNum(0.4, previousRightMotorSpeed, -m_controller.getRawAxis(5));
-//Troubleshoot driving (Joystick and Motor relationship)
-    if(AButtonPos ==true && BButtonPos ==true) {
-      arcadeActive = previousMode;
-    }else if(AButtonPos ==true && BButtonPos ==false) {
-      arcadeActive =true;
-    }else if(AButtonPos ==false && BButtonPos ==true) {
-      arcadeActive =false;
-    }else if(AButtonPos ==false && BButtonPos ==false) {
-      arcadeActive = previousMode;
-      //if both modes are active, put robot into the last mode it was in, if A button pressed then arcade mode is active, if B button is pressed then arcade isnt active, if neither are active then set robot to previous mode
-      }
-      previousMode = arcadeActive;
-   /* if (arcadeActive) {
-      m_robotDrive.arcadeDrive(previousArcadeMotorSpeed * .6, -m_controller.getRawAxis(1) * .6);
+//     // no driver selection of drivemode
+//     boolean AButtonPos;
+//     boolean BButtonPos;
+//     previousMode = arcadeActive;
+//     AButtonPos = m_controller.getRawButton(1);
+//     BButtonPos = m_controller.getRawButton(2);
+//     //previousArcadeMotorSpeed = RampNum(.4, previousArcadeMotorSpeed, -m_controller.getRawAxis(1));
+//     //previousLeftMotorSpeed = RampNum(0.4, previousLeftMotorSpeed, -m_controller.getRawAxis(1));
+//     //previousRightMotorSpeed = RampNum(0.4, previousRightMotorSpeed, -m_controller.getRawAxis(5));
+// //Troubleshoot driving (Joystick and Motor relationship)
+//     if(AButtonPos ==true && BButtonPos ==true) {
+//       arcadeActive = previousMode;
+//     }else if(AButtonPos ==true && BButtonPos ==false) {
+//       arcadeActive =true;
+//     }else if(AButtonPos ==false && BButtonPos ==true) {
+//       arcadeActive =false;
+//     }else if(AButtonPos ==false && BButtonPos ==false) {
+//       arcadeActive = previousMode;
+//       //if both modes are active, put robot into the last mode it was in, if A button pressed then arcade mode is active, if B button is pressed then arcade isnt active, if neither are active then set robot to previous mode
+//       }
+//       previousMode = arcadeActive;
+//    if (arcadeActive) {
+//       m_robotDrive.arcadeDrive(previousArcadeMotorSpeed * .6, -m_controller.getRawAxis(1) * .55);
     
-    } else {
-      m_robotDrive.tankDrive(previousLeftMotorSpeed * .6, previousRightMotorSpeed * .6);
-    }
-    System.out.println (arcadeActive);
-    System.out.println (previousMode);
-*/
-    SmartDashboard.putNumber("axis 1", m_controller.getRawAxis(1));
+//     } else {
+//       m_robotDrive.tankDrive(previousLeftMotorSpeed * .55, previousRightMotorSpeed * .55);
+//     }
+//     System.out.println (arcadeActive);
+//     System.out.println (previousMode);
 
-    boolean tank; //button B
-    boolean arcade; //button A
-    tank = m_controller.getRawButton(2);
-    arcade = m_controller.getRawButton(1);
-    if (tank == true && arcade == true) {
-      tank =false;
-      arcade =false;
-      
-    }
 
-    Double motorSpeedLimit = .06;
+
+
+// SmartDashboard.putNumber("axis 1", m_controller.getRawAxis(1));
+
+// boolean tank; //button B
+// boolean arcade; //button A
+// tank = m_controller.getRawButton(2);
+// arcade = m_controller.getRawButton(1);
+// if (tank == true && arcade == true) {
+//   tank =false;
+//   arcade =false;
+       
+//     }
+
     
-    if (arcadeActive == false) {
-      m_robotDrive.tankDrive(-m_controller.getRawAxis(1) *motorSpeedLimit, -m_controller.getRawAxis(5) *motorSpeedLimit);
-    } else if(arcadeActive == true) {
-      m_robotDrive.arcadeDrive(-m_controller.getRawAxis(1) *motorSpeedLimit, -m_controller.getRawAxis(0) *motorSpeedLimit);
-    } else {
-      m_robotDrive.stopMotor(); // stop robot
-    }
+//     /*   no driver selection of drive mode
+//      SmartDashboard.putNumber("m_controller a1", -m_controller.getRawAxis(1));
+//      SmartDashboard.putNumber("m_controller a5", -m_controller.getRawAxis(5));
+//      SmartDashboard.putNumber("m_controller a1", -m_controller.getRawAxis(1));
+//      SmartDashboard.putNumber("m_controller a0", -m_controller.getRawAxis(0));
+//     if (arcadeActive == false) {
+//        SmartDashboard.putNumber("m_controller a1", -m_controller.getRawAxis(1));
+//       SmartDashboard.putNumber("m_controller a5", -m_controller.getRawAxis(5));
+//       m_robotDrive.tankDrive(-m_controller.getRawAxis(1) *motorSpeedLimit, -m_controller.getRawAxis(5) *motorSpeedLimit);
+//     } else if(arcadeActive == true) {
+//      SmartDashboard.putNumber("m_controller a1", -m_controller.getRawAxis(1));
+//      SmartDashboard.putNumber("m_controller a0", -m_controller.getRawAxis(0));
+//       m_robotDrive.arcadeDrive(-m_controller.getRawAxis(1) *motorSpeedLimit, -m_controller.getRawAxis(0) *motorSpeedLimit);
+//     } else {
+//       m_robotDrive.stopMotor(); // stop robot
+//     }
+//     */
+    
+    // no driver selection of drive mode
+    Double motorSpeedLimit = -0.75;   // note: why are we inverting the speed limmit and each controler input?
+    m_robotDrive.arcadeDrive(-m_controller.getRawAxis(drivetrainSpeedAxis) *motorSpeedLimit, -m_controller.getRawAxis(drivetrainRotateAxis) *motorSpeedLimit);
+    
 
-
-
-
-
+    
     /////////////////
     /*Topworks code*/
     /*
      * Spins up the launcher wheel
      */
-    if (m_manipController.getRawButton(1)) {
+    if (m_controller.getRawButton(launchwheelFunctionButton)) {
       m_launchWheel.set(LAUNCHER_SPEED);
     }
-    else if(m_manipController.getRawButtonReleased(1))
+    else if(m_controller.getRawButtonReleased(launchwheelFunctionButton))
+    {
+      m_launchWheel.set(0);
+
+    }
+
+    // spins up feeder wheel
+     if (m_controller.getRawButton(launchwheelFunctionButton)) {
+      m_launchWheel.set(FEEDER_OUT_SPEED);
+    }
+    else if(m_controller.getRawButtonReleased(launchwheelFunctionButton))
     {
       m_launchWheel.set(0);
     }
 
+
     /*
      * Spins feeder wheel, wait for launch wheel to spin up to full speed for best results
      */
-    if (m_manipController.getRawButton(6))
+    if (m_controller.getRawButton(feedwheelFunctionButton))
     {
       m_feedWheel.set(FEEDER_OUT_SPEED);
     }
-    else if(m_manipController.getRawButtonReleased(6))
+    else if(m_controller.getRawButtonReleased(feedwheelFunctionButton))
     {
       m_feedWheel.set(0);
     }
@@ -501,16 +556,21 @@ System.out.println("i work"+i);
     /*
      * While the button is being held spin both motors to intake note
      */
-    if(m_manipController.getRawButton(5))
+
+
+    if(m_controller.getRawButton(intakeFunctionButton))
     {
-      m_launchWheel.set(-LAUNCHER_SPEED);
-      m_feedWheel.set(FEEDER_IN_SPEED);
+      m_launchWheel.set(-LAUNCHER_IN_SPEED);
+      
+      m_feedWheel.set(-FEEDER_IN_SPEED);
     }
-    else if(m_manipController.getRawButtonReleased(5))
+    else if(m_controller.getRawButtonReleased(intakeFunctionButton))
     {
       m_launchWheel.set(0);
       m_feedWheel.set(0);
     }
+
+    
 
     /*
      * While the amp button is being held, spin both motors to "spit" the note
@@ -518,12 +578,12 @@ System.out.println("i work"+i);
      *
      * (this may take some driver practice to get working reliably)
      */
-    if(m_manipController.getRawButton(2))
+    if(m_controller.getRawButton(ampFunctionButton))
     {
       m_feedWheel.set(FEEDER_AMP_SPEED);
       m_launchWheel.set(LAUNCHER_AMP_SPEED);
     }
-    else if(m_manipController.getRawButtonReleased(2))
+    else if(m_controller.getRawButtonReleased(ampFunctionButton))
     {
       m_feedWheel.set(0);
       m_launchWheel.set(0);
@@ -537,11 +597,11 @@ System.out.println("i work"+i);
      * It may be best to have the roller claw passively on throughout the match to 
      * better retain notes but we did not test this
      */ 
-    if(m_manipController.getRawButton(3))
+    /*if(m_controller.getRawButton(3))
     {
       m_rollerClaw.set(CLAW_OUTPUT_POWER);
     }
-    else if(m_manipController.getRawButton(4))
+    else if(m_controller.getRawButton(4))
     {
       m_rollerClaw.set(-CLAW_OUTPUT_POWER);
     }
@@ -549,17 +609,17 @@ System.out.println("i work"+i);
     {
       m_rollerClaw.set(0);
     }
-
+*/
     /**
      * POV is the D-PAD (directional pad) on your controller, 0 == UP and 180 == DOWN
      * 
      * After a match re-enable your robot and unspool the climb
      */
-    if(m_manipController.getPOV() == 0)
+    if(m_controller.getPOV() == 0)
     {
       m_climber.set(1);
     }
-    else if(m_manipController.getPOV() == 180)
+    else if(m_controller.getPOV() == 180)
     {
       m_climber.set(-1);
     }
