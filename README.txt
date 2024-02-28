@@ -4,7 +4,7 @@ Robot code for 2024 FRC game
 
 
 
-/*     VERSION HISTORY
+/**    VERSION HISTORY
 *           First number in the version number should only increase if the overall structure of
 *                    the code changes. The code should remain functionally the same. If the
 *                   first number changes, there should be no other changes to the code and the
@@ -30,6 +30,8 @@ Robot code for 2024 FRC game
 *         V1.1.0  | Damien H.    |   Finished adding evereybot topworks code. Hasnt been
 *                 | Quaid        |      tested on the bot yet. Likely has button mapping
 *                 |              |      conflicts.
+*         V1.1.1  | Damien H.    |   Remapped robot controls to driver's liking.
+          V1.2.1  | All          |   Added autonumous code
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *    !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!

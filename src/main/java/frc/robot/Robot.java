@@ -28,6 +28,7 @@
 *                 | Quaid        |      tested on the bot yet. Likely has button mapping
 *                 |              |      conflicts.
 *         V1.1.1  | Damien H.    |   Remapped robot controls to driver's liking.
+          V1.2.1  | All          |   Added autonumous code
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *    !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -42,7 +43,11 @@
  * TODO/NOTES:
  * 
  * Test on robot
- * check button mapping
+ * Finish auto choosing code
+ * Read button on DIO ports
+ * Add delay before auto prog runns
+ * Add delay before Launch
+ * Refactor auto to run step for certain ammount of time
  */
 
 
@@ -72,6 +77,9 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 // import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+
+import java.util.Optional;
+
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkBase.IdleMode;
@@ -81,6 +89,8 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 - Damien H.
 */
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 // import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;  // This lib is being depreciated
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -117,6 +127,8 @@ public class Robot extends TimedRobot {
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_motorcontroller1, m_motorcontroller3);
   private final static Joystick m_controller = new Joystick(0);
   private final Timer m_timer = new Timer();
+
+  Optional<Alliance> ally = DriverStation.getAlliance();
   // NOTE: variables
   // vvvvvvvvvvvvvvv
   boolean arcadeActive;
@@ -124,8 +136,11 @@ public class Robot extends TimedRobot {
   double previousArcadeMotorSpeed = 0;
   double previousLeftMotorSpeed = 0;
   double previousRightMotorSpeed = 0;
+  double launchStartTime = 0;
+  double launchWheelTime = 1.0;
+  double feedWheelTime = 1.0;
 
-  // note: button functions
+  // note: button functions 
   // vvvvvvvvvvvvvvvvvvvvvv
   int drivetrainRotateAxis = 0;
   int drivetrainSpeedAxis = 5;
@@ -145,12 +160,27 @@ public class Robot extends TimedRobot {
   // vvvvvvvvvvvvvv
   Double motorSpeedLimit = -0.50;   // note: why are we inverting the speed limmit and each controler input?
 
+  /* Both of the motors used on the KitBot launcher are CIMs which are brushed motors
+  */
+  CANSparkBase m_launchWheel = new CANSparkMax(7, MotorType.kBrushed);
+  // private final WPI_VictorSPX m_feedWheel = new WPI_VictorSPX(31);
+  
+  CANSparkBase m_feedWheel = new CANSparkMax(8, MotorType.kBrushed);
 
 
-  static void testMethod (int i) {   // todo: Remove
-System.out.println("i work"+i);
-
+  void launchNote(double launchTimeElapsed) {
+    double l_launchTimeElapsed = launchTimeElapsed;
+    if (l_launchTimeElapsed < launchWheelTime) {
+      m_launchWheel.set(LAUNCHER_SPEED);
+    } else if (l_launchTimeElapsed < feedWheelTime) {
+      m_feedWheel.set(FEEDER_OUT_SPEED);
+    } else {
+      m_launchWheel.set(0);
+      m_feedWheel.set(0);
+    }
   }
+
+  void autodriveRed(double launchTimeElapsed){}
 
   private static final String kNothingAuto = "do nothing";
   private static final String kLaunchAndDrive = "launch drive";
@@ -207,6 +237,7 @@ System.out.println("i work"+i);
     m_chooser.addOption("launch", kLaunch);
     m_chooser.addOption("drive", kDrive);
     SmartDashboard.putData("Auto choices", m_chooser);
+    
 
     /*
      * Apply the current limit to the drivetrain motors
@@ -235,12 +266,7 @@ System.out.println("i work"+i);
   */
  
 
-  /* Both of the motors used on the KitBot launcher are CIMs which are brushed motors
-  */
-  CANSparkBase m_launchWheel = new CANSparkMax(7, MotorType.kBrushed);
-  // private final WPI_VictorSPX m_feedWheel = new WPI_VictorSPX(31);
   
- CANSparkBase m_feedWheel = new CANSparkMax(8, MotorType.kBrushed);
 
 
  /**
@@ -362,6 +388,474 @@ System.out.println("i work"+i);
 
  double autonomousStartTime;
 
+  void driveForward() {
+    m_robotDrive.tankDrive(.6, .6);
+  }
+
+  void driveBackward() {
+    m_robotDrive.tankDrive(-.6, -.6);
+  }
+
+  void turnLeft() {
+    m_robotDrive.tankDrive(0, .6);
+  }
+
+  void turnRight() {
+    m_robotDrive.tankDrive(.6, 0);
+  }
+
+
+ /*auto functions*/
+ /*VVVVVVVVVVVVVV*/
+
+
+//  Optional<Alliance> ally = DriverStation.getAlliance();
+//  if (ally.get() == Alliance.Red) {
+//   // code
+  
+//   }
+// if (ally.get() == Alliance.Blue) {
+//   // code
+//   }
+
+// auton must take 15 seconds or less
+ 
+  void exitFromLeftOrRight(double autoTimeElapsed) {
+    // drive forward for x amount of time
+    // do nothing
+
+  
+
+    double step1Time = 6000;
+  
+    if (ally.get() == Alliance.Red) {
+      if (autoTimeElapsed <= step1Time) {
+        driveBackward();
+      } else {
+        m_robotDrive.tankDrive(0, 0);
+      }
+    }
+
+  if (ally.get() == Alliance.Blue) {
+    if (autoTimeElapsed <= step1Time) {
+      driveForward();
+    } else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+  }
+}
+
+
+
+  void exitFromCenter(double autoTimeElapsed) {
+    // drive forward for x amount of time
+    // turn left for x amount of time
+    // drive forward for x amount of time
+    // do nothing
+
+
+    double step1time = 3000;
+    double step2time = 3000;
+    double step3time = 3000;
+if (ally.get() == Alliance.Blue) {
+    if (autoTimeElapsed <= step1time) {
+      driveForward();
+    } else if (autoTimeElapsed <= step2time) {
+      turnLeft();
+    } else if (autoTimeElapsed <= step3time) {
+      driveForward();
+    } else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+  }
+
+  if (ally.get() == Alliance.Red) {
+    if (autoTimeElapsed <= step1time) {
+      driveForward();
+    } else if (autoTimeElapsed <= step2time) {
+      turnRight();
+    } else if (autoTimeElapsed <= step3time) {
+      driveForward();
+    } else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+  }
+}
+
+  
+  void exitFromAmp(double autoTimeElapsed) {
+    // drive backward for x amount of time .1
+    // turn right for x amount of time     .2
+    // drive forward for x amount of time  .3
+    // do nothing
+
+
+    double step1time = 3000;
+    double step2time = 6000;
+    double step3time = 10000;
+    if (ally.get() == Alliance.Red) {
+      if (autoTimeElapsed <= step1time) {
+        driveBackward();
+      } else if (autoTimeElapsed <= step2time) {
+        turnLeft();
+      } else if (autoTimeElapsed <= step3time) {
+        driveForward();
+      } else {
+        m_robotDrive.tankDrive(0, 0);
+      }
+    }
+
+    if (ally.get() == Alliance.Blue) {
+      if (autoTimeElapsed <= step1time) {
+        driveBackward();
+      } else if (autoTimeElapsed <= step2time) {
+        turnRight();
+      } else if (autoTimeElapsed <= step3time) {
+        driveForward();
+      } else {
+        m_robotDrive.tankDrive(0, 0);
+      }
+    }
+}
+
+
+  void exitFromSpeakerLeft (double autoTimeElapsed) {
+    // drive backward for x amount of time .1
+    // turn right for x amount of time     .2
+    // drive backward for x amount of time .3
+    // do nothing
+
+
+    double step1time = 3000;
+    double step2time = 6000;
+    double step3time = 10000;
+    if (ally.get() == Alliance.Red) {
+      if (autoTimeElapsed <= step1time) {
+        driveBackward();
+      } else if (autoTimeElapsed <= step2time) {
+        turnLeft();
+      } else if (autoTimeElapsed <= step3time) {
+        driveBackward();
+      } else {
+        m_robotDrive.tankDrive(0, 0);
+      }
+    }
+
+    if (ally.get() == Alliance.Blue) {
+      if (autoTimeElapsed <= step1time) {
+        driveBackward();
+      } else if (autoTimeElapsed <= step2time) {
+        turnRight();
+      } else if (autoTimeElapsed <= step3time) {
+        driveBackward();
+      } else {
+        m_robotDrive.tankDrive(0, 0);
+      }
+    }
+  }
+
+
+  void exitFromSpeakerCenter (double autoTimeElapsed) {
+    // drive backward for x amount of time .1
+    // turn left for x amount of time      .2
+    // drive backward for x amount of time .3
+    // turn right for x amount of time     .4
+    // drive backward for x amount of time .5
+    // do nothing
+
+    
+    double step1time = 1000;
+    double step2time = 2000;
+    double step3time = 3000;
+    double step4time = 4000;
+    double step5time = 50000;
+    
+    
+    
+    Optional<Alliance> ally = DriverStation.getAlliance();
+    if (ally.get() == Alliance.Red) {
+      if (autoTimeElapsed <= step1time) {
+        driveBackward();
+      } else if (autoTimeElapsed <= step2time) {
+        turnRight();
+      } else if (autoTimeElapsed <= step3time) {
+        driveBackward();
+      } else if (autoTimeElapsed <= step4time) {
+        turnLeft();
+      } else  if (autoTimeElapsed <= step5time) {
+        driveBackward();
+      }  else {
+        m_robotDrive.tankDrive(0, 0);
+      }
+    }
+    if (ally.get() == Alliance.Blue) {
+      if (autoTimeElapsed <= step1time) {
+        driveBackward();
+      }else if (autoTimeElapsed <= step2time) {
+        turnLeft();
+      }else if (autoTimeElapsed <= step3time) {
+        driveBackward();
+      }else if (autoTimeElapsed <= step4time) {
+        turnRight();
+      }else  if (autoTimeElapsed <= step5time) {
+        driveBackward();
+      }  else {
+        m_robotDrive.tankDrive(0, 0);
+      }
+    }
+  }
+
+
+
+  void exitFromSpeakerRight (double autoTimeElapsed) {
+    // drive backward for x amount of time .1
+    // turn left for x amount of time      .2
+    // drive backward for x amount of time .3
+    // turn right for x amount of time     .4
+    // drive backward for x amount of time .5
+    // do nothing
+
+    double step1time = 1000;
+    double step2time = 2000;
+    double step3time = 3000;
+    double step4time = 4000;
+    double step5time = 50000;
+
+     if (ally.get() == Alliance.Red) {
+    if (autoTimeElapsed <= step1time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step2time) {
+      turnRight();
+    }else if (autoTimeElapsed <= step3time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step4time) {
+      turnLeft();
+    }else  if (autoTimeElapsed <= step5time) {
+      driveBackward();
+    }  else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+  }
+
+  if (ally.get() == Alliance.Blue) {
+    if (autoTimeElapsed <= step1time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step2time) {
+      turnLeft();
+    }else if (autoTimeElapsed <= step3time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step4time) {
+      turnRight();
+    }else  if (autoTimeElapsed <= step5time) {
+      driveBackward();
+    }  else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+  }
+}
+
+
+  void launchAndExitFromSpeakerLeft (double autoTimeElapsed) {
+    // launch note
+    // drive backward for x amount of time
+    // turn right for x amount of time
+    // drive backward for x amount of time
+    // do nothing
+
+    double step1time = 1000;
+    double step2time = 2000;
+    double step3time = 3000;
+    double step4time = 4000;
+
+    double startTime = 0;
+    boolean firstCall = true;
+     if (ally.get() == Alliance.Red) {
+    if (autoTimeElapsed <= step1time) {
+      if (firstCall) {
+        startTime = Timer.getFPGATimestamp();
+        launchNote(Timer.getFPGATimestamp() - startTime);
+        firstCall = false;
+      } else {
+        launchNote(Timer.getFPGATimestamp() - startTime);
+      }
+    }else if (autoTimeElapsed <= step2time) {
+      turnRight();
+    }else if (autoTimeElapsed <= step3time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step4time) {
+      turnLeft();
+    }  else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+  }
+
+   if (ally.get() == Alliance.Blue) {
+    if (autoTimeElapsed <= step1time) {
+      if (firstCall) {
+        startTime = Timer.getFPGATimestamp();
+        launchNote(Timer.getFPGATimestamp() - startTime);
+        firstCall = false;
+      } else {
+        launchNote(Timer.getFPGATimestamp() - startTime);
+      }
+    }else if (autoTimeElapsed <= step2time) {
+      turnLeft();
+    }else if (autoTimeElapsed <= step3time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step4time) {
+      turnRight();
+    }  else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+  }
+  }
+
+  void launchAndExitFromSpeakerCenter (double autoTimeElapsed) {
+    // launch note
+    // drive backward for x amount of time
+    // turn left for x amount of time
+    // drive backward for x amount of time
+    // turn right for x amount of time
+    // drive backward for x amount of time
+    // do nothing
+
+    double step1time = 1000;
+    double step2time = 2000;
+    double step3time = 3000;
+    double step4time = 4000;
+    double step5time = 5000;
+    double step6time = 6000;
+
+    double startTime = 0;
+    boolean firstCall = true;
+     if (ally.get() == Alliance.Red) {
+    if (autoTimeElapsed <= step1time) {
+      if (firstCall) {
+        startTime = Timer.getFPGATimestamp();
+        launchNote(Timer.getFPGATimestamp() - startTime);
+        firstCall = false;
+      } else {
+        launchNote(Timer.getFPGATimestamp() - startTime);
+      }
+      
+    }else if (autoTimeElapsed <= step2time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step3time) {
+      turnRight();
+    }else if (autoTimeElapsed <= step4time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step5time) {
+      turnLeft();
+    }else if (autoTimeElapsed <= step6time) {
+      driveBackward();
+    }  else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+
+  }
+
+    if (ally.get() == Alliance.Blue) {
+    if (autoTimeElapsed <= step1time) {
+      if (firstCall) {
+        startTime = Timer.getFPGATimestamp();
+        launchNote(Timer.getFPGATimestamp() - startTime);
+        firstCall = false;
+      } else {
+        launchNote(Timer.getFPGATimestamp() - startTime);
+      }
+      
+    }else if (autoTimeElapsed <= step2time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step3time) {
+      turnLeft();
+    }else if (autoTimeElapsed <= step4time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step5time) {
+      turnRight();
+    }else if (autoTimeElapsed <= step6time) {
+      driveBackward();
+    }  else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+
+  }
+}
+
+
+  void launchAndExitFromSpeakerRight (double autoTimeElapsed) {
+    // launch note
+    // drive backward for x amount of time
+    // turn left for x amount of time
+    // drive backward for x amount of time
+    // turn right for x amount of time
+    // drive backward for x amount of time
+    // do nothing
+
+double step1time = 1000;
+    double step2time = 2000;
+    double step3time = 3000;
+    double step4time = 4000;
+    double step5time = 5000;
+    double step6time = 6000;
+
+    double startTime = 0;
+    boolean firstCall = true;
+     if (ally.get() == Alliance.Red) {
+    if (autoTimeElapsed <= step1time) {
+      if (firstCall) {
+        startTime = Timer.getFPGATimestamp();
+        launchNote(Timer.getFPGATimestamp() - startTime);
+        firstCall = false;
+      } else {
+        launchNote(Timer.getFPGATimestamp() - startTime);
+      }
+      
+    }else if (autoTimeElapsed <= step2time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step3time) {
+      turnRight();
+    }else if (autoTimeElapsed <= step4time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step5time) {
+      turnLeft();
+    }else if (autoTimeElapsed <= step6time) {
+      driveBackward();
+    }  else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+  }
+
+   if (ally.get() == Alliance.Blue) {
+    if (autoTimeElapsed <= step1time) {
+      if (firstCall) {
+        startTime = Timer.getFPGATimestamp();
+        launchNote(Timer.getFPGATimestamp() - startTime);
+        firstCall = false;
+      } else {
+        launchNote(Timer.getFPGATimestamp() - startTime);
+      }
+      
+    }else if (autoTimeElapsed <= step2time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step3time) {
+      turnLeft();
+    }else if (autoTimeElapsed <= step4time) {
+      driveBackward();
+    }else if (autoTimeElapsed <= step5time) {
+      turnRight();
+    }else if (autoTimeElapsed <= step6time) {
+      driveBackward();
+    }  else {
+      m_robotDrive.tankDrive(0, 0);
+    }
+  }
+  }
+
+
+
+ /*^^^^^^^^^^^^^^*/
+ /*auto functions*/
+
   /** This function is run once each time the robot enters autonomous mode. */
   @Override
   public void autonomousInit() {
@@ -379,19 +873,28 @@ System.out.println("i work"+i);
     AUTO_DRIVE_SPEED = -0.5;
     AUTO_LAUNCHER_SPEED = 1;
 
-    if (m_autoSelected == kLaunch) {
-      AUTO_DRIVE_SPEED = 0;
-
-    } else if (m_autoSelected == kDrive) {
-      AUTO_LAUNCHER_SPEED = 0;
-
-    } else if (m_autoSelected == kNothingAuto) {
-      AUTO_DRIVE_SPEED = 0;
-      AUTO_LAUNCHER_SPEED = 0;
-    }
-
     autonomousStartTime = Timer.getFPGATimestamp();
+    
 
+    switch (m_autoSelected) {
+      case kLaunch:
+      //  launchNote(double timeElapsed)
+        // init vars
+        launchNote(Timer.getFPGATimestamp() - autonomousStartTime);
+      break;
+
+      case kDrive:
+        // Put custom auto code here
+      break;
+
+      case kLaunchAndDrive:
+        // Put custom auto code here
+      break;
+
+      default:
+        // do nothing
+      break;
+    }
   }
   
 
@@ -399,7 +902,7 @@ System.out.println("i work"+i);
   @Override
   public void autonomousPeriodic() {
 
-    double timeElapsed = Timer.getFPGATimestamp() - autonomousStartTime;
+    double autoTimeElapsed = Timer.getFPGATimestamp() - autonomousStartTime;
 
     /*
      * Spins up launcher wheel until time spent in auto is greater than AUTO_LAUNCH_DELAY_S
@@ -410,26 +913,46 @@ System.out.println("i work"+i);
      *
      * Does not move when time is greater than AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S
      */
-    if(timeElapsed < AUTO_LAUNCH_DELAY_S)
-    {
-      m_launchWheel.set(AUTO_LAUNCHER_SPEED);
-      m_robotDrive.arcadeDrive(0, 0);
+    // if(timeElapsed < AUTO_LAUNCH_DELAY_S)
+    // {
+    //   m_launchWheel.set(AUTO_LAUNCHER_SPEED);
+    //   m_robotDrive.arcadeDrive(0, 0);
 
-    }
-    else if(timeElapsed < AUTO_DRIVE_DELAY_S)
-    {
-      m_feedWheel.set(AUTO_LAUNCHER_SPEED);
-      m_robotDrive.arcadeDrive(0, 0);
-    }
-    else if(timeElapsed < AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S)
-    {
-      m_launchWheel.set(0);
-      m_feedWheel.set(0);
-      m_robotDrive.arcadeDrive(AUTO_DRIVE_SPEED, 0);
-    }
-    else
-    {
-      m_robotDrive.arcadeDrive(0, 0);
+    // }
+    // else if(timeElapsed < AUTO_DRIVE_DELAY_S)
+    // {
+    //   m_feedWheel.set(AUTO_LAUNCHER_SPEED);
+    //   m_robotDrive.arcadeDrive(0, 0);
+    // }
+    // else if(timeElapsed < AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S)
+    // {
+    //   m_launchWheel.set(0);
+    //   m_feedWheel.set(0);
+    //   m_robotDrive.arcadeDrive(AUTO_DRIVE_SPEED, 0);
+    // }
+    // else
+    // {
+    //   m_robotDrive.arcadeDrive(0, 0);
+    // }
+
+    // timeElapsed
+
+    switch (m_autoSelected) {
+      case kLaunch:
+        // launchNote(timeElapsed)
+      break;
+
+      case kDrive:
+        // Put custom auto code here
+      break;
+
+      case kLaunchAndDrive:
+        // Put custom auto code here
+      break;
+
+      default:
+        // do nothing
+      break;
     }
     /* For an explanation on differintial drive, squaredInputs, arcade drive and tank drive see the bottom of this file */
   }
@@ -525,8 +1048,7 @@ System.out.println("i work"+i);
     if (m_controller.getRawButton(launchwheelFunctionButton)) {
       m_launchWheel.set(LAUNCHER_SPEED);
     }
-    else if(m_controller.getRawButtonReleased(launchwheelFunctionButton))
-    {
+    else if(m_controller.getRawButtonReleased(launchwheelFunctionButton)) {
       m_launchWheel.set(0);
 
     }
@@ -535,8 +1057,7 @@ System.out.println("i work"+i);
      if (m_controller.getRawButton(launchwheelFunctionButton)) {
       m_launchWheel.set(FEEDER_OUT_SPEED);
     }
-    else if(m_controller.getRawButtonReleased(launchwheelFunctionButton))
-    {
+    else if(m_controller.getRawButtonReleased(launchwheelFunctionButton)) {
       m_launchWheel.set(0);
     }
 
