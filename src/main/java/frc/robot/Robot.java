@@ -31,6 +31,10 @@
 *                 |              |      implimenting a start delay and launch delay for
 *                 |              |      autonomous. Still need to add selection logic
 *                 |              |      and selections to the shoffleboard.
+*         V1.3.0  | Quaid        |   Changed launch mode to use a single button instead of
+*                 |              |      2 sepperate buttons. Added limmit swich to keep
+*                 |              |      intake from intaking when note is inside. Adjusted
+*                                       some parameters.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -46,7 +50,8 @@
  * Test on robot
  * Finish auto choosing code
  * Read button on DIO ports
- * Add delay before Launch
+ * Add Shuffleboard logic
+ * Add shuffleboard buttons
  */
 
 package frc.robot;
@@ -78,6 +83,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 - Damien H.
 */
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 // import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;  // This lib is being depreciated
@@ -127,8 +133,11 @@ public class Robot extends TimedRobot {
   double previousLeftMotorSpeed = 0;
   double previousRightMotorSpeed = 0;
   double launchStartTime = 0;
-  double launchWheelTime = 1.0;
-  double feedWheelTime = 1.0;
+  double launchTimeElapsed = 0;
+  double teliopLaunchTimeElapsed = 0;
+  double teliopLaunchStartTime = 0;
+  double launchWheelTime = .75;
+  Boolean previousLaunchButtonPos = false;
 
   // note: button functions 
   // vvvvvvvvvvvvvvvvvvvvvv
@@ -137,17 +146,18 @@ public class Robot extends TimedRobot {
   // int rightAxis = 1;
   // int leftAxis =4;
 
-  int ampFunctionButton = 10;
-  int intakeFunctionButton = 4;
-  int feedwheelFunctionButton = 6;
-  int launchwheelFunctionButton = 3;
+  int ampFunctionButton = 2;
+  int intakeFunctionButton = 5;
+  // int feedwheelFunctionButton = 6;
+  // int launchwheelFunctionButton = 3;
 
-  int elevatorExtendFunctionButton = 0; // this is a position on the POV. Must be 0, 45, 90, 135, 180, 225, 270, or 315. front = 0   right = 90   back = 180   left = 270
-  int elevatorRetractFunctionButton = 180; // this is a position on the POV. Must be 0, 45, 90, 135, 180, 225, 270, or 315. front = 0   right = 90   back = 180   left = 270
+  int elevatorExtendFunctionButtonPos = 0; // this is a position on the POV. Must be 0, 45, 90, 135, 180, 225, 270, or 315. front = 0   right = 90   back = 180   left = 270
+  int elevatorRetractFunctionButtonPos = 180; // this is a position on the POV. Must be 0, 45, 90, 135, 180, 225, 270, or 315. front = 0   right = 90   back = 180   left = 270
 
   // note: tunables
   // vvvvvvvvvvvvvv
-  Double motorSpeedLimit = -0.50; // note: why are we inverting the speed limmit and each controler input?
+  Double motorSpeedLimit = -0.75; // note: why are we inverting the speed limmit and each controler input?
+  Double motorRotateSpeedLimit = -0.63;
 
   /* Both of the motors used on the KitBot launcher are CIMs which are brushed motors*/
   CANSparkBase m_launchWheel = new CANSparkMax(7, MotorType.kBrushed);
@@ -155,17 +165,18 @@ public class Robot extends TimedRobot {
 
   CANSparkBase m_feedWheel = new CANSparkMax(8, MotorType.kBrushed);
 
-  int noteDetectionLimmitSwichPin = 0;    // update:
+  int noteDetectionLimitSwichPin = 9;    // update:
+  DigitalInput noteDetectionLimitSwich = new DigitalInput(noteDetectionLimitSwichPin);
 
   void launchNote(double launchTimeElapsed) {
     double l_launchTimeElapsed = launchTimeElapsed;
+    SmartDashboard.putNumber("l_launchTimeElapsed", l_launchTimeElapsed);
     if (l_launchTimeElapsed < launchWheelTime) {
       m_launchWheel.set(LAUNCHER_SPEED);
-    } else if (l_launchTimeElapsed < feedWheelTime) {
-      m_feedWheel.set(FEEDER_OUT_SPEED);
-    } else {
-      m_launchWheel.set(0);
       m_feedWheel.set(0);
+    } else {
+      m_launchWheel.set(LAUNCHER_SPEED);
+      m_feedWheel.set(FEEDER_OUT_SPEED);
     }
   }
 
@@ -217,7 +228,7 @@ public class Robot extends TimedRobot {
     m_launchWheel.setInverted(true);
 
     // m_rollerClaw.setInverted(false);
-    m_climber.setInverted(false);
+    m_climber.setInverted(true);
 
     m_motorcontroller2.follow(m_motorcontroller1);
     m_motorcontroller4.follow(m_motorcontroller3);
@@ -305,9 +316,9 @@ public class Robot extends TimedRobot {
   /**
   * Percent output to run the feeder when intaking note
   */
-  static final double FEEDER_IN_SPEED = .4;
+  static final double FEEDER_IN_SPEED = .1;
 
-  static final double LAUNCHER_IN_SPEED = .4;
+  static final double LAUNCHER_IN_SPEED = .6;
   /**
   * Percent output for amp or drop note, configure based on polycarb bend
   */
@@ -329,7 +340,7 @@ public class Robot extends TimedRobot {
   * Percent output for scoring in amp or dropping note, configure based on polycarb bend
   * .14 works well with no bend from our testing
   */
-  static final double LAUNCHER_AMP_SPEED = .10;
+  static final double LAUNCHER_AMP_SPEED = .25;
   /**
   * Percent output for the roller claw
   */
@@ -341,7 +352,8 @@ public class Robot extends TimedRobot {
   /**
   * Percent output to power the climber
   */
-  static final double CLIMER_OUTPUT_POWER = 1;
+  static final double CLIMER_EXTEND_POWER = .4;
+  static final double CLIMER_RETRACT_POWER = .4;
 
   /**
   
@@ -958,10 +970,10 @@ public class Robot extends TimedRobot {
   /** This function is called once each time the robot enters teleoperated mode. */
   @Override
   public void teleopInit() {
-    m_motorcontroller1.setIdleMode(IdleMode.kCoast);
-    m_motorcontroller2.setIdleMode(IdleMode.kCoast);
-    m_motorcontroller3.setIdleMode(IdleMode.kCoast);
-    m_motorcontroller4.setIdleMode(IdleMode.kCoast);
+    m_motorcontroller1.setIdleMode(IdleMode.kBrake);
+    m_motorcontroller2.setIdleMode(IdleMode.kBrake);
+    m_motorcontroller3.setIdleMode(IdleMode.kBrake);
+    m_motorcontroller4.setIdleMode(IdleMode.kBrake);
   }
 
   /** This function is called periodically during teleoperated mode. */
@@ -1028,47 +1040,45 @@ public class Robot extends TimedRobot {
     //     */
 
     // no driver selection of drive mode
-    Double motorSpeedLimit = -0.75; // note: why are we inverting the speed limmit and each controler input?
-    m_robotDrive.arcadeDrive(-m_controller.getRawAxis(drivetrainSpeedAxis) * motorSpeedLimit,
-        -m_controller.getRawAxis(drivetrainRotateAxis) * motorSpeedLimit);
+    // Double motorSpeedLimit = -0.75; // note: why are we inverting the speed limmit and each controler input?
+    m_robotDrive.arcadeDrive(-m_controller.getRawAxis(drivetrainSpeedAxis) * motorSpeedLimit, -m_controller.getRawAxis(drivetrainRotateAxis) * motorRotateSpeedLimit);
 
     /////////////////
     /*Topworks code*/
     /*
      * Spins up the launcher wheel
      */
-    if (m_controller.getRawButton(launchwheelFunctionButton)) {
-      m_launchWheel.set(LAUNCHER_SPEED);
-    } else if (m_controller.getRawButtonReleased(launchwheelFunctionButton)) {
-      m_launchWheel.set(0);
+    // if (m_controller.getRawButton(launchwheelFunctionButton)) {
+    //   m_launchWheel.set(LAUNCHER_SPEED);
+    // } else if (m_controller.getRawButtonReleased(launchwheelFunctionButton)) {
+    //   m_launchWheel.set(0);
 
-    }
+    // }
 
     // spins up feeder wheel
-    if (m_controller.getRawButton(launchwheelFunctionButton)) {
-      m_launchWheel.set(FEEDER_OUT_SPEED);
-    } else if (m_controller.getRawButtonReleased(launchwheelFunctionButton)) {
-      m_launchWheel.set(0);
-    }
+    // if (m_controller.getRawButton(launchwheelFunctionButton)) {
+    //   m_launchWheel.set(FEEDER_OUT_SPEED);
+    // } else if (m_controller.getRawButtonReleased(launchwheelFunctionButton)) {
+    //   m_launchWheel.set(0);
+    // }
 
     /*
      * Spins feeder wheel, wait for launch wheel to spin up to full speed for best results
      */
-    if (m_controller.getRawButton(feedwheelFunctionButton)) {
-      m_feedWheel.set(FEEDER_OUT_SPEED);
-    } else if (m_controller.getRawButtonReleased(feedwheelFunctionButton)) {
-      m_feedWheel.set(0);
-    }
+    // if (m_controller.getRawButton(feedwheelFunctionButton)) {
+    //   m_feedWheel.set(FEEDER_OUT_SPEED);
+    // } else if (m_controller.getRawButtonReleased(feedwheelFunctionButton)) {
+    //   m_feedWheel.set(0);
+    // }
 
     /*
      * While the button is being held spin both motors to intake note
      */
 
-    if (m_controller.getRawButton(intakeFunctionButton)) {
+    if (m_controller.getRawButton(intakeFunctionButton) && noteDetectionLimitSwich.get()) {
       m_launchWheel.set(-LAUNCHER_IN_SPEED);
-
       m_feedWheel.set(-FEEDER_IN_SPEED);
-    } else if (m_controller.getRawButtonReleased(intakeFunctionButton)) {
+    } else {
       m_launchWheel.set(0);
       m_feedWheel.set(0);
     }
@@ -1086,6 +1096,34 @@ public class Robot extends TimedRobot {
       m_feedWheel.set(0);
       m_launchWheel.set(0);
     }
+
+    Boolean launchButtonPos = m_controller.getRawButton(1);
+    SmartDashboard.putBoolean("launchButtonPos", launchButtonPos);
+
+    int line = 1096;
+    if (launchButtonPos) {
+      line = 1098;
+      if (!previousLaunchButtonPos) {
+        previousLaunchButtonPos = launchButtonPos;
+        line = 1101;
+        teliopLaunchStartTime = Timer.getFPGATimestamp();
+        teliopLaunchTimeElapsed = Timer.getFPGATimestamp() - launchStartTime;
+      } else {
+        previousLaunchButtonPos = launchButtonPos;
+        line = 1105;
+        teliopLaunchTimeElapsed = Timer.getFPGATimestamp() - teliopLaunchStartTime;
+      }
+      launchNote(teliopLaunchTimeElapsed);
+    } else {
+      // m_launchWheel.set(0);
+      // m_feedWheel.set(0);
+      line = 0;
+      previousLaunchButtonPos = launchButtonPos;
+    }
+    SmartDashboard.putBoolean("previousLaunchButtonPos", previousLaunchButtonPos);
+    SmartDashboard.putNumber("teliopLaunchTimeElapsed", teliopLaunchTimeElapsed);
+    SmartDashboard.putNumber("line ", line);
+
 
     /**
      * Hold one of the two buttons to either intake or exjest note from roller claw
@@ -1113,10 +1151,10 @@ public class Robot extends TimedRobot {
      * 
      * After a match re-enable your robot and unspool the climb
      */
-    if (m_controller.getPOV() == 0) {
-      m_climber.set(1);
-    } else if (m_controller.getPOV() == 180) {
-      m_climber.set(-1);
+    if (m_controller.getPOV() == elevatorExtendFunctionButtonPos) {
+      m_climber.set(CLIMER_EXTEND_POWER);
+    } else if (m_controller.getPOV() == elevatorRetractFunctionButtonPos) {
+      m_climber.set(CLIMER_RETRACT_POWER * -1);
     } else {
       m_climber.set(0);
     }

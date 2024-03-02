@@ -31,7 +31,16 @@ Robot code for 2024 FRC game
 *                 | Quaid        |      tested on the bot yet. Likely has button mapping
 *                 |              |      conflicts.
 *         V1.1.1  | Damien H.    |   Remapped robot controls to driver's liking.
-          V1.2.1  | All          |   Added autonumous code
+*         V1.2.1  | All          |   Added autonumous code
+*         V1.2.2  | Quaid        |   Finished creating autonomous functions and
+*                 |              |      implimenting a start delay and launch delay for
+*                 |              |      autonomous. Still need to add selection logic
+*                 |              |      and selections to the shoffleboard.
+*         V1.3.0  | Quaid        |   Changed launch mode to use a single button instead of
+*                 |              |      2 sepperate buttons. Added limmit swich to keep
+*                 |              |      intake from intaking when note is inside. Adjusted
+*                                       some parameters.
+*          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
 *    !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
