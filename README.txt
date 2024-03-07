@@ -39,7 +39,10 @@ Robot code for 2024 FRC game
 *         V1.3.0  | Quaid        |   Changed launch mode to use a single button instead of
 *                 |              |      2 sepperate buttons. Added limmit swich to keep
 *                 |              |      intake from intaking when note is inside. Adjusted
-*                                       some parameters.
+*                 |              |      some parameters.
+*         V1.4.0  | Quaid        |   Autonomous options fully implimented. Need to set the
+*                 |              |      step times for each option. Current times are just
+*                 |              |      place holders.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
