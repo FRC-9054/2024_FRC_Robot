@@ -38,6 +38,7 @@
 *         V1.4.0  | Quaid        |   Autonomous options fully implimented. Need to set the
 *                 |              |      step times for each option. Current times are just
 *                 |              |      place holders.
+*         V1.4.1  | Quaid        |   Cleaned up extra code and comments.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -66,22 +67,14 @@
 
 package frc.robot;
 
-// import com.revrobotics.CANSparkMax;
-// import com.revrobotics.CANSparkMaxLowLevel.MotorType; 
 
-// import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-// import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
 import edu.wpi.first.cameraserver.*;
 
-
-// import org.opencv.features2d.FlannBasedMatcher;
-
-// import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
@@ -90,33 +83,15 @@ import java.util.Optional;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkBase.IdleMode;
-import com.revrobotics.CANSparkMax;
-import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
-/*last three are from everybot library
-- Damien H.
-*/
-
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-// import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;  // This lib is being depreciated
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-/*last five are from everybot library
--Damien H.
-*/
 
-/**
- * The VM is configured to automatically run this class, and to call the functions corresponding to
- * each mode, as described in the TimedRobot documentation. If you change the name of this class or
- * the package after creating this project, you must also update the manifest file in the resource
- * directory.
- */
+
+
 
 
 public class Robot extends TimedRobot {
@@ -145,35 +120,13 @@ public class Robot extends TimedRobot {
     exitFromLeftOrRight
   }
 
-  // SendableChooser<Start_Pos> posChooser;
-
-  // void putAutoOptions() {
-  //   posChooser = new SendableChooser<>();
-  //   posChooser.setDefaultOption("Center", Start_Pos.CENTER);
-  //   posChooser.addOption("Left", Start_Pos.LEFT);
-  //   posChooser.addOption("Right", Start_Pos.RIGHT);
-  //   posChooser.addOption("Speaker", Start_Pos.SPEAKER);
-  //   posChooser.addOption("Amp", Start_Pos.AMP);
-  // }
-
-
-
-
-  // private final WPI_VictorSPX m_motorcontroller0 = new WPI_VictorSPX(0);
-  // private final WPI_VictorSPX m_motorcontroller1 = new WPI_VictorSPX(1);
-  //  private final WPI_VictorSPX m_motorcontroller2  = new WPI_VictorSPX(2);
-  // private final WPI_VictorSPX m_motorcontroller3  = new WPI_VictorSPX(3);
   private final CANSparkMax m_motorcontroller1 = new CANSparkMax(1, MotorType.kBrushed); // Front Left
   private final CANSparkMax m_motorcontroller2 = new CANSparkMax(2, MotorType.kBrushed); // Back Left
   private final CANSparkMax m_motorcontroller3 = new CANSparkMax(3, MotorType.kBrushed); // Front Right
   private final CANSparkMax m_motorcontroller4 = new CANSparkMax(4, MotorType.kBrushed); // Back Right
 
-  // private final MotorControllerGroup m_leftDrive = new MotorControllerGroup(m_motorcontroller0,m_motorcontroller1);
-  // private final MotorControllerGroup m_rightDrive = new MotorControllerGroup(m_motorcontroller2,m_motorcontroller3);
-  // private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftDrive, m_rightDrive);
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_motorcontroller1, m_motorcontroller3);
   private final static Joystick m_controller = new Joystick(0);
-  private final Timer m_timer = new Timer();
 
   Optional<Alliance> ally = DriverStation.getAlliance();
 
@@ -274,19 +227,13 @@ public class Robot extends TimedRobot {
     return initialValue;
   }*/
 
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
+  
   @Override
   public void robotInit() {
     CameraServer.startAutomaticCapture();
-    // We need to invert one side of the drivetrain so that positive voltages
-    // result in both sides moving forward. Depending on how your robot's
-    // gearbox is constructed, you might have to invert the left side instead.
-    // m_rightDrive.setInverted(true);
+    
     m_motorcontroller1.setInverted(false);
-    m_motorcontroller3.setInverted(true); // only invert this one because the otheer follows note:
+    m_motorcontroller3.setInverted(true); // note: only invert this one because the otheer follows
 
     m_feedWheel.setInverted(true);
     m_launchWheel.setInverted(true);
@@ -314,16 +261,12 @@ public class Robot extends TimedRobot {
     // m_chooser.addOption(kLaunchAndExitFromSpeakerRight, kLaunchAndExitFromSpeakerRight);   
     SmartDashboard.putData("Auto choices", m_chooser);
 
-    /*
-     * Apply the current limit to the drivetrain motors
-     */
+    
     m_motorcontroller1.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
     m_motorcontroller2.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
     m_motorcontroller3.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
     m_motorcontroller4.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
 
-    // m_feedWheel.setSmartCurrentLimit(FEEDER_CURRENT_LIMIT_A);
-    // m_launchWheel.setSmartCurrentLimit(LAUNCHER_CURRENT_LIMIT_A);
 
     // m_rollerClaw.setSmartCurrentLimit(60);
     m_climber.setSmartCurrentLimit(60);
@@ -336,42 +279,11 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Time (seconds)", Timer.getFPGATimestamp());
   }
 
-  /* This function is run when the robot is first started up and should be used for any
-  * initialization code.
-  */
-
-  /**
-  * Roller Claw motor controller instance.
-  */
   //  CANSparkBase m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
-  /**
-  * Climber motor controller instance. In the stock Everybot configuration a
-  * NEO is used, replace with kBrushed if using a brushed motor.
-  */
+  
   CANSparkBase m_climber = new CANSparkMax(6, MotorType.kBrushless);
 
-  /**
-  * The starter code uses the most generic joystick class.
-  *
-  * To determine which button on your controller corresponds to which number, open the FRC
-  * driver station, go to the USB tab, plug in a controller and see which button lights up
-  * when pressed down
-  *
-  * Buttons index from 0
-  */
-
-  /*above is the launcher code from the everybot, IDK where exactly this goes but this is my best guess 
-      -Damien H.
-   */
-
-  //  Joystick m_driverController = new Joystick(0);
-
-  //  Joystick m_controller = new Joystick(0);
-
-  /*i think we will have to assign the joystick IDs ourselves
-  - Damien H.
-  */
-
+  
   // --------------- Magic numbers. Use these to adjust settings. ---------------
 
   /**
@@ -431,12 +343,7 @@ public class Robot extends TimedRobot {
   static final double CLIMER_EXTEND_POWER = .4;
   static final double CLIMER_RETRACT_POWER = .4;
 
-  /**
   
-  /* settings for launcher from everybot code
-  -Damien H.
-  */
-
   double AUTO_LAUNCH_DELAY_S;
   double AUTO_DRIVE_DELAY_S;
 
@@ -504,21 +411,9 @@ public class Robot extends TimedRobot {
   /*auto functions*/
   /*VVVVVVVVVVVVVV*/
 
-  //  Optional<Alliance> ally = DriverStation.getAlliance();
-  //  if (ally.get() == Alliance.Red) {
-  //   // code
-
-  //   }
-  // if (ally.get() == Alliance.Blue) {
-  //   // code
-  //   }
-
-  // auton must take 15 seconds or less
 
   void exitFromLeftOrRight(double autoTimeElapsed) {
-    // drive forward for x amount of time
-    // do nothing
-
+    
     double step1Time = 6000;
 
     if (autoTimeElapsed <= autoStartDelay) {
@@ -543,10 +438,6 @@ public class Robot extends TimedRobot {
   }
 
   void exitFromCenter(double autoTimeElapsed) {
-    // drive forward for x amount of time
-    // turn left for x amount of time
-    // drive forward for x amount of time
-    // do nothing
 
     double step1time = 3000;
     double step2time = 3000;
@@ -581,10 +472,6 @@ public class Robot extends TimedRobot {
   }
 
   void exitFromAmp(double autoTimeElapsed) {
-    // drive backward for x amount of time .1
-    // turn right for x amount of time     .2
-    // drive forward for x amount of time  .3
-    // do nothing
 
     double step1time = 3000;
     double step2time = 6000;
@@ -802,12 +689,6 @@ public class Robot extends TimedRobot {
   }
 
   void exitFromSpeakerCenter(double autoTimeElapsed) {
-    // drive backward for x amount of time .1
-    // turn left for x amount of time      .2
-    // drive backward for x amount of time .3
-    // turn right for x amount of time     .4
-    // drive backward for x amount of time .5
-    // do nothing
 
     double step1time = 1000;
     double step2time = 1000;
@@ -879,13 +760,6 @@ public class Robot extends TimedRobot {
   }
 
   void launchAndExitFromSpeakerCenter(double autoTimeElapsed) {
-    // launch note
-    // drive backward for x amount of time
-    // turn left for x amount of time
-    // drive backward for x amount of time
-    // turn right for x amount of time
-    // drive backward for x amount of time
-    // do nothing
 
     double step1time = 1000;
     double step2time = 2000;
@@ -958,14 +832,7 @@ public class Robot extends TimedRobot {
   }
 
   void launchAndExitFromSpeakerRight(double autoTimeElapsed) {
-    // launch note
-    // drive backward for x amount of time
-    // turn left for x amount of time
-    // drive backward for x amount of time
-    // turn right for x amount of time
-    // drive backward for x amount of time
-    // do nothing
-
+    
     double step1time = 1000;
     double step2time = 2000;
     double step3time = 3000;
@@ -1037,7 +904,7 @@ public class Robot extends TimedRobot {
   /*^^^^^^^^^^^^^^*/
   /*auto functions*/
 
-  /** This function is run once each time the robot enters autonomous mode. */
+  
   @Override
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
@@ -1106,7 +973,7 @@ public class Robot extends TimedRobot {
     }
   }
 
-  /** This function is called periodically during autonomous. */
+
   @Override
   public void autonomousPeriodic() {
 
@@ -1159,7 +1026,7 @@ public class Robot extends TimedRobot {
     }
   }
 
-  /** This function is called once each time the robot enters teleoperated mode. */
+
   @Override
   public void teleopInit() {
     m_motorcontroller1.setIdleMode(IdleMode.kBrake);
@@ -1168,104 +1035,12 @@ public class Robot extends TimedRobot {
     m_motorcontroller4.setIdleMode(IdleMode.kBrake);
   }
 
-  /** This function is called periodically during teleoperated mode. */
+
   @Override
   public void teleopPeriodic() {
-    //     // no driver selection of drivemode
-    //     boolean AButtonPos;
-    //     boolean BButtonPos;
-    //     previousMode = arcadeActive;
-    //     AButtonPos = m_controller.getRawButton(1);
-    //     BButtonPos = m_controller.getRawButton(2);
-    //     //previousArcadeMotorSpeed = RampNum(.4, previousArcadeMotorSpeed, -m_controller.getRawAxis(1));
-    //     //previousLeftMotorSpeed = RampNum(0.4, previousLeftMotorSpeed, -m_controller.getRawAxis(1));
-    //     //previousRightMotorSpeed = RampNum(0.4, previousRightMotorSpeed, -m_controller.getRawAxis(5));
-    // //Troubleshoot driving (Joystick and Motor relationship)
-    //     if(AButtonPos ==true && BButtonPos ==true) {
-    //       arcadeActive = previousMode;
-    //     }else if(AButtonPos ==true && BButtonPos ==false) {
-    //       arcadeActive =true;
-    //     }else if(AButtonPos ==false && BButtonPos ==true) {
-    //       arcadeActive =false;
-    //     }else if(AButtonPos ==false && BButtonPos ==false) {
-    //       arcadeActive = previousMode;
-    //       //if both modes are active, put robot into the last mode it was in, if A button pressed then arcade mode is active, if B button is pressed then arcade isnt active, if neither are active then set robot to previous mode
-    //       }
-    //       previousMode = arcadeActive;
-    //    if (arcadeActive) {
-    //       m_robotDrive.arcadeDrive(previousArcadeMotorSpeed * .6, -m_controller.getRawAxis(1) * .55);
-
-    //     } else {
-    //       m_robotDrive.tankDrive(previousLeftMotorSpeed * .55, previousRightMotorSpeed * .55);
-    //     }
-    //     System.out.println (arcadeActive);
-    //     System.out.println (previousMode);
-
-    // SmartDashboard.putNumber("axis 1", m_controller.getRawAxis(1));
-
-    // boolean tank; //button B
-    // boolean arcade; //button A
-    // tank = m_controller.getRawButton(2);
-    // arcade = m_controller.getRawButton(1);
-    // if (tank == true && arcade == true) {
-    //   tank =false;
-    //   arcade =false;
-
-    //     }
-
-    //     /*   no driver selection of drive mode
-    //      SmartDashboard.putNumber("m_controller a1", -m_controller.getRawAxis(1));
-    //      SmartDashboard.putNumber("m_controller a5", -m_controller.getRawAxis(5));
-    //      SmartDashboard.putNumber("m_controller a1", -m_controller.getRawAxis(1));
-    //      SmartDashboard.putNumber("m_controller a0", -m_controller.getRawAxis(0));
-    //     if (arcadeActive == false) {
-    //        SmartDashboard.putNumber("m_controller a1", -m_controller.getRawAxis(1));
-    //       SmartDashboard.putNumber("m_controller a5", -m_controller.getRawAxis(5));
-    //       m_robotDrive.tankDrive(-m_controller.getRawAxis(1) *motorSpeedLimit, -m_controller.getRawAxis(5) *motorSpeedLimit);
-    //     } else if(arcadeActive == true) {
-    //      SmartDashboard.putNumber("m_controller a1", -m_controller.getRawAxis(1));
-    //      SmartDashboard.putNumber("m_controller a0", -m_controller.getRawAxis(0));
-    //       m_robotDrive.arcadeDrive(-m_controller.getRawAxis(1) *motorSpeedLimit, -m_controller.getRawAxis(0) *motorSpeedLimit);
-    //     } else {
-    //       m_robotDrive.stopMotor(); // stop robot
-    //     }
-    //     */
-
-    // no driver selection of drive mode
-    // Double motorSpeedLimit = -0.75; // note: why are we inverting the speed limmit and each controler input?
     m_robotDrive.arcadeDrive(-m_controller.getRawAxis(drivetrainSpeedAxis) * motorSpeedLimit, -m_controller.getRawAxis(drivetrainRotateAxis) * motorRotateSpeedLimit);
 
-    /////////////////
-    /*Topworks code*/
-    /*
-     * Spins up the launcher wheel
-     */
-    // if (m_controller.getRawButton(launchwheelFunctionButton)) {
-    //   m_launchWheel.set(LAUNCHER_SPEED);
-    // } else if (m_controller.getRawButtonReleased(launchwheelFunctionButton)) {
-    //   m_launchWheel.set(0);
-
-    // }
-
-    // spins up feeder wheel
-    // if (m_controller.getRawButton(launchwheelFunctionButton)) {
-    //   m_launchWheel.set(FEEDER_OUT_SPEED);
-    // } else if (m_controller.getRawButtonReleased(launchwheelFunctionButton)) {
-    //   m_launchWheel.set(0);
-    // }
-
-    /*
-     * Spins feeder wheel, wait for launch wheel to spin up to full speed for best results
-     */
-    // if (m_controller.getRawButton(feedwheelFunctionButton)) {
-    //   m_feedWheel.set(FEEDER_OUT_SPEED);
-    // } else if (m_controller.getRawButtonReleased(feedwheelFunctionButton)) {
-    //   m_feedWheel.set(0);
-    // }
-
-    /*
-     * While the button is being held spin both motors to intake note
-     */
+    
 
     if (m_controller.getRawButton(intakeFunctionButton) && noteDetectionLimitSwich.get()) {
       m_launchWheel.set(-LAUNCHER_IN_SPEED);
@@ -1275,12 +1050,7 @@ public class Robot extends TimedRobot {
       m_feedWheel.set(0);
     }
 
-    /*
-     * While the amp button is being held, spin both motors to "spit" the note
-     * out at a lower speed into the amp
-     *
-     * (this may take some driver practice to get working reliably)
-     */
+    
     if (m_controller.getRawButton(ampFunctionButton)) {
       m_feedWheel.set(FEEDER_AMP_SPEED);
       m_launchWheel.set(LAUNCHER_AMP_SPEED);
@@ -1307,8 +1077,6 @@ public class Robot extends TimedRobot {
       }
       launchNote(teliopLaunchTimeElapsed);
     } else {
-      // m_launchWheel.set(0);
-      // m_feedWheel.set(0);
       line = 0;
       previousLaunchButtonPos = launchButtonPos;
     }
@@ -1317,32 +1085,6 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("line ", line);
 
 
-    /**
-     * Hold one of the two buttons to either intake or exjest note from roller claw
-     * 
-     * One button is positive claw power and the other is negative
-     * 
-     * It may be best to have the roller claw passively on throughout the match to 
-     * better retain notes but we did not test this
-     */
-    /*if(m_controller.getRawButton(3))
-    {
-      m_rollerClaw.set(CLAW_OUTPUT_POWER);
-    }
-    else if(m_controller.getRawButton(4))
-    {
-      m_rollerClaw.set(-CLAW_OUTPUT_POWER);
-    }
-    else
-    {
-      m_rollerClaw.set(0);
-    }
-    */
-    /**
-     * POV is the D-PAD (directional pad) on your controller, 0 == UP and 180 == DOWN
-     * 
-     * After a match re-enable your robot and unspool the climb
-     */
     if (m_controller.getPOV() == elevatorExtendFunctionButtonPos) {
       m_climber.set(CLIMER_EXTEND_POWER);
     } else if (m_controller.getPOV() == elevatorRetractFunctionButtonPos) {
@@ -1350,16 +1092,14 @@ public class Robot extends TimedRobot {
     } else {
       m_climber.set(0);
     }
-    /*Topworks code*/
-    /////////////////
   }
 
-  /** This function is called once each time the robot enters test mode. */
+  
   @Override
   public void testInit() {
   }
 
-  /** This function is called periodically during test mode. */
+
   @Override
   public void testPeriodic() {
   }

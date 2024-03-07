@@ -43,6 +43,7 @@ Robot code for 2024 FRC game
 *         V1.4.0  | Quaid        |   Autonomous options fully implimented. Need to set the
 *                 |              |      step times for each option. Current times are just
 *                 |              |      place holders.
+*         V1.4.1  | Quaid        |   Cleaned up extra code and comments.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
