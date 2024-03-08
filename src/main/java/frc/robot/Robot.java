@@ -249,13 +249,13 @@ public class Robot extends TimedRobot {
     // UPDATE: UNCOMMENT THE AUTO OPTIONS THAT YOU WANT TO HAVE AVAILABLE
     m_motorcontroller2.follow(m_motorcontroller1);
     m_motorcontroller4.follow(m_motorcontroller3);
-    m_chooser.setDefaultOption("do nothing", kNothingAuto);
-    // m_chooser.addOption(kExitFromLeftOrRight, kExitFromLeftOrRight);    
-    // m_chooser.addOption(kExitFromCenter, kExitFromCenter);    
-    // m_chooser.addOption(kExitFromAmp, kExitFromAmp);    
-    // m_chooser.addOption(kExitFromSpeakerLeft, kExitFromSpeakerLeft);    
-    // m_chooser.addOption(kExitFromSpeakerCenter, kExitFromSpeakerCenter);    
-    // m_chooser.addOption(kExitFromSpeakerRight, kExitFromSpeakerRight);    
+    m_chooser.setDefaultOption("do nothing", kNothingAuto); 
+    m_chooser.addOption(kExitFromLeftOrRight, kExitFromLeftOrRight);    
+    m_chooser.addOption(kExitFromCenter, kExitFromCenter);    
+    m_chooser.addOption(kExitFromAmp, kExitFromAmp);    
+    m_chooser.addOption(kExitFromSpeakerLeft, kExitFromSpeakerLeft);    
+    m_chooser.addOption(kExitFromSpeakerCenter, kExitFromSpeakerCenter);    
+    m_chooser.addOption(kExitFromSpeakerRight, kExitFromSpeakerRight);    
     // m_chooser.addOption(kLaunchAndExitFromSpeakerLeft, kLaunchAndExitFromSpeakerLeft);    
     // m_chooser.addOption(kLaunchAndExitFromSpeakerCenter, kLaunchAndExitFromSpeakerCenter);    
     // m_chooser.addOption(kLaunchAndExitFromSpeakerRight, kLaunchAndExitFromSpeakerRight);   
@@ -442,15 +442,19 @@ public class Robot extends TimedRobot {
     double step1time = 3000;
     double step2time = 3000;
     double step3time = 3000;
+    double step4time = 3000;
+
     if (autoTimeElapsed <= autoStartDelay) {
       m_robotDrive.tankDrive(0, 0);
     } else {
       if (ally.get() == Alliance.Blue) {
         if (autoTimeElapsed <= autoStartDelay + step1time) {
+          m_robotDrive.tankDrive(0, 0);
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time) {
           driveForward();
-        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time) {
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time + step3time) {
           turnLeft();
-        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time) {
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time + step3time + step4time) {
           driveForward();
         } else {
           m_robotDrive.tankDrive(0, 0);
@@ -459,6 +463,9 @@ public class Robot extends TimedRobot {
 
       if (ally.get() == Alliance.Red) {
         if (autoTimeElapsed <= autoStartDelay + step1time) {
+          m_robotDrive.tankDrive(0, 0);
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time) {
+        } if (autoTimeElapsed <= autoStartDelay + step1time) {
           driveForward();
         } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time) {
           turnRight();
@@ -573,7 +580,7 @@ public class Robot extends TimedRobot {
     double step3time = 3000;
     double step4time = 4000;
 
-    double startTime = 0;
+    double startTime = 1;
     boolean firstCall = true;
 
      if (ally.get() == Alliance.Red) {
@@ -917,7 +924,7 @@ public class Robot extends TimedRobot {
     m_motorcontroller3.setIdleMode(IdleMode.kBrake);
     m_motorcontroller4.setIdleMode(IdleMode.kBrake);
 
-    AUTO_LAUNCH_DELAY_S = 2;
+    AUTO_LAUNCH_DELAY_S = 0;
     AUTO_DRIVE_DELAY_S = 3;
 
     AUTO_DRIVE_TIME_S = 2.0;
