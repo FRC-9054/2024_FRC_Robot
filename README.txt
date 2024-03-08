@@ -44,6 +44,7 @@ Robot code for 2024 FRC game
 *                 |              |      step times for each option. Current times are just
 *                 |              |      place holders.
 *         V1.4.1  | Quaid        |   Cleaned up extra code and comments.
+*         V1.5.0  | Quaid        |   Added support for a limmit swich to detect the fully retracted state of the climber. 
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
