@@ -44,7 +44,20 @@ Robot code for 2024 FRC game
 *                 |              |      step times for each option. Current times are just
 *                 |              |      place holders.
 *         V1.4.1  | Quaid        |   Cleaned up extra code and comments.
-*         V1.5.0  | Quaid        |   Added support for a limmit swich to detect the fully retracted state of the climber. 
+*         V1.5.0  | Quaid        |   Added support for a limmit swich to detect the fully
+*                 |              |      retracted state of the climber. 
+*         V1.6.0  | Damien       |   This code is the resulting code from the Belton
+*                 | Faylynn      |      district event with the addition of uncommenting
+*                 |              |      some auto code and opening up the drivetrain speed
+*                 |              |      to %100. NOTE: the auto code in this version WILL
+*                 |              |      NOT WORK. The code uses while loops which prevent
+*                 |              |      the FMS from being able to make function calls to
+*                 |              |      our robot. This must be fixed, or they may disable
+*                 |              |      our robot for the entire match. I will likely revert
+*                 |              |      to V1.5.0, and fix the auto logic from that version.
+*                 |              |      V1.5.0 auto logic ran the first step and never
+*                 |              |      continued passed that point. -Quaid
+*                 |              |
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
