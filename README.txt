@@ -57,7 +57,7 @@ Robot code for 2024 FRC game
 *                 |              |      to V1.5.0, and fix the auto logic from that version.
 *                 |              |      V1.5.0 auto logic ran the first step and never
 *                 |              |      continued passed that point. -Quaid
-*                 |              |
+*         V1.6.1  | All          |   This code is only working teliop code. BAD AUTO
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
