@@ -62,6 +62,11 @@ Robot code for 2024 FRC game
 *                 |              |      should have the correct step order for each auto (check
 *                 |              |      V1.5.0 to be sure), but there is an example of how to
 *                 |              |      fix the auto logic problem.
+*         V1.5.2  | Quaid        |   Updated exitFromLeftOrRight fn. Need to test and see if
+*                 |              |      it runs properly. If it does, then we need to merge the
+*                 |              |      teliop changes into this V1.5.x auto_fix branch and test
+*                 |              |      agian. Need to be sure that we only keep teliop changes
+*                 |              |      from main branch.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!

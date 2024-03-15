@@ -57,6 +57,11 @@
 *                 |              |      should have the correct step order for each auto (check
 *                 |              |      V1.5.0 to be sure), but there is an example of how to
 *                 |              |      fix the auto logic problem.
+*         V1.5.2  | Quaid        |   Updated exitFromLeftOrRight fn. Need to test and see if
+*                 |              |      it runs properly. If it does, then we need to merge the
+*                 |              |      teliop changes into this V1.5.x auto_fix branch and test
+*                 |              |      agian. Need to be sure that we only keep teliop changes
+*                 |              |      from main branch.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -258,7 +263,7 @@ public class Robot extends TimedRobot {
     m_motorcontroller2.follow(m_motorcontroller1);
     m_motorcontroller4.follow(m_motorcontroller3);
     m_chooser.setDefaultOption("do nothing", kNothingAuto);
-    // m_chooser.addOption(kExitFromLeftOrRight, kExitFromLeftOrRight);    
+    m_chooser.addOption(kExitFromLeftOrRight, kExitFromLeftOrRight);    
     // m_chooser.addOption(kExitFromCenter, kExitFromCenter);    
     // m_chooser.addOption(kExitFromAmp, kExitFromAmp);    
     // m_chooser.addOption(kExitFromSpeakerLeft, kExitFromSpeakerLeft);    
@@ -449,20 +454,18 @@ public class Robot extends TimedRobot {
 
   void exitFromLeftOrRight(double autoTimeElapsed) {
 
-    double step1Time = 6000;
+    double step1Time = 3000;    // drive forward for 3 seconds
 
     if (autoTimeElapsed <= autoStartDelay) {
       m_robotDrive.tankDrive(0, 0);
     } else {
       if (ally.get() == Alliance.Red) {
         if (autoTimeElapsed <= autoStartDelay + step1Time) {
-          driveBackward();
+          driveForward();
         } else {
           m_robotDrive.tankDrive(0, 0);
         }
-      }
-
-      if (ally.get() == Alliance.Blue) {
+      } else if (ally.get() == Alliance.Blue) {
         if (autoTimeElapsed <= autoStartDelay + step1Time) {
           driveForward();
         } else {
