@@ -70,6 +70,9 @@ Robot code for 2024 FRC game
 *         V1.5.3  | Quaid        |   The previous code didnt work because the step time vars
 *                 |              |      assumed milliseconds and the FPGA timer returns seconds
 *                 |              |      as a double.
+*         V1.5.4  | Quaid        |   Meerged in non auto changes from main branch V1.6.1 for
+*                 |              |      testing. If evereything behaves as expected, this code
+*                 |              |      will become V1.6.2 on the main branch
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!

@@ -65,6 +65,9 @@
 *         V1.5.3  | Quaid        |   The previous code didnt work because the step time vars
 *                 |              |      assumed milliseconds and the FPGA timer returns seconds
 *                 |              |      as a double.
+*         V1.5.4  | Quaid        |   Meerged in non auto changes from main branch V1.6.1 for
+*                 |              |      testing. If evereything behaves as expected, this code
+*                 |              |      will become V1.6.2 on the main branch
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -141,8 +144,10 @@ public class Robot extends TimedRobot {
   private final CANSparkMax m_motorcontroller3 = new CANSparkMax(3, MotorType.kBrushed); // Front Right
   private final CANSparkMax m_motorcontroller4 = new CANSparkMax(4, MotorType.kBrushed); // Back Right
 
-  private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_motorcontroller1, m_motorcontroller3);
-  private final static Joystick m_controller = new Joystick(0);
+  private final DifferentialDrive m_robotDrive =
+      new DifferentialDrive(m_motorcontroller1, m_motorcontroller3);
+  private final static Joystick m_controller = new Joystick(0);   // note: here is how a controler is created. It will use the same functions as this one but have a different name and number
+  private final static Joystick n_controller = new Joystick(3);
 
   Optional<Alliance> ally = DriverStation.getAlliance();
 
@@ -273,7 +278,7 @@ public class Robot extends TimedRobot {
     // m_chooser.addOption(kExitFromSpeakerCenter, kExitFromSpeakerCenter);    
     // m_chooser.addOption(kExitFromSpeakerRight, kExitFromSpeakerRight);    
     // m_chooser.addOption(kLaunchAndExitFromSpeakerLeft, kLaunchAndExitFromSpeakerLeft);    
-    // m_chooser.addOption(kLaunchAndExitFromSpeakerCenter, kLaunchAndExitFromSpeakerCenter);    
+    m_chooser.addOption(kLaunchAndExitFromSpeakerCenter, kLaunchAndExitFromSpeakerCenter);    
     // m_chooser.addOption(kLaunchAndExitFromSpeakerRight, kLaunchAndExitFromSpeakerRight);   
     SmartDashboard.putData("Auto choices", m_chooser);
 
@@ -432,18 +437,18 @@ public class Robot extends TimedRobot {
   void updateClimber(Logic logicVersion) {
     switch (logicVersion) {
       case OLD:
-        if (m_controller.getPOV() == elevatorExtendFunctionButtonPos) {
+        if (n_controller.getPOV() == elevatorExtendFunctionButtonPos) {
           m_climber.set(CLIMER_EXTEND_POWER);
-        } else if (m_controller.getPOV() == elevatorRetractFunctionButtonPos) {
+        } else if (n_controller.getPOV() == elevatorRetractFunctionButtonPos) {
           m_climber.set(CLIMER_RETRACT_POWER * -1);
         } else {
           m_climber.set(0);
         }
         break;
       case NEW:
-        if (m_controller.getPOV() == elevatorExtendFunctionButtonPos) {
+        if (n_controller.getPOV() == elevatorExtendFunctionButtonPos) {
           extendClimber();
-        } else if (m_controller.getPOV() == elevatorRetractFunctionButtonPos) {
+        } else if (n_controller.getPOV() == elevatorRetractFunctionButtonPos) {
           retractClimber();
         } else {
           m_climber.set(0);
@@ -522,6 +527,7 @@ public class Robot extends TimedRobot {
       }
     }
   }
+  
 
   void exitFromAmp(double autoTimeElapsed) {
 
