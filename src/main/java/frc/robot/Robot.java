@@ -68,6 +68,14 @@
 *         V1.5.4  | Quaid        |   Meerged in non auto changes from main branch V1.6.1 for
 *                 |              |      testing. If evereything behaves as expected, this code
 *                 |              |      will become V1.6.2 on the main branch
+*         V1.5.5  | Quaid        |   Auton logic fixed. Use the same logic that is in the 
+*                 |              |      exitFromLeftOrRight fn. The initial bug that caused all
+*                 |              |      of our issues was due to FPGA returning time as seconds,
+*                 |              |      not miliseconds, and our auto logic used miliseconds to
+*                 |              |      determine what step to run. The bug caused all of our
+*                 |              |      times to be 1000 times larger than we thought. There was
+*                 |              |      also an issue with forward being backward and backward
+*                 |              |      being forward, that was fixed as well.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -371,11 +379,11 @@ public class Robot extends TimedRobot {
 
   double autonomousStartTime;
 
-  void driveForward() {
+  void driveBackward() {
     m_robotDrive.tankDrive(.4, .5);
   }
 
-  void driveForward(Speed speed) {
+  void driveBackward(Speed speed) {
     switch (speed) {
       case LOW:
         m_robotDrive.tankDrive(.4, .5);
@@ -392,11 +400,11 @@ public class Robot extends TimedRobot {
     }
   }
 
-  void driveBackward() {
+  void driveForward() {
     m_robotDrive.tankDrive(-.4, -.5);
   }
 
-  void driveBackward(Speed speed) {
+  void driveForward(Speed speed) {
     switch (speed) {
       case LOW:
         m_robotDrive.tankDrive(-.4, -.5);
@@ -414,11 +422,11 @@ public class Robot extends TimedRobot {
   }
 
   void turnLeft() {
-    m_robotDrive.tankDrive(0, .6);
+    m_robotDrive.tankDrive(0, -.6);
   }
 
   void turnRight() {
-    m_robotDrive.tankDrive(.6, 0);
+    m_robotDrive.tankDrive(-.6, 0);
   }
 
   void extendClimber() {
@@ -469,13 +477,13 @@ public class Robot extends TimedRobot {
     } else {
       if (ally.get() == Alliance.Red) {
         if (autoTimeElapsed <= autoStartDelay + step1Time) {
-          driveForward();
+          driveBackward();
         } else {
           m_robotDrive.tankDrive(0, 0);
         }
       } else if (ally.get() == Alliance.Blue) {
         if (autoTimeElapsed <= autoStartDelay + step1Time) {
-          driveForward();
+          driveBackward();
         } else {
           m_robotDrive.tankDrive(0, 0);
         }
