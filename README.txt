@@ -67,6 +67,9 @@ Robot code for 2024 FRC game
 *                 |              |      teliop changes into this V1.5.x auto_fix branch and test
 *                 |              |      agian. Need to be sure that we only keep teliop changes
 *                 |              |      from main branch.
+*         V1.5.3  | Quaid        |   The previous code didnt work because the step time vars
+*                 |              |      assumed milliseconds and the FPGA timer returns seconds
+*                 |              |      as a double.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
