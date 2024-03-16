@@ -41,6 +41,36 @@
 *         V1.4.1  | Quaid        |   Cleaned up extra code and comments.
 *         V1.5.0  | Quaid        |   Added support for a limmit swich to detect the fully
 *                 |              |      retracted state of the climber. 
+*         V1.5.1  | Quaid        |   This code has been reverted to a save shortly after day 1
+*                 |              |      Belton has started. This code is messed up, but it
+*                 |              |      should have the correct step order for each auto (check
+*                 |              |      V1.5.0 to be sure), but there is an example of how to
+*                 |              |      fix the auto logic problem.
+*         V1.5.2  | Quaid        |   Updated exitFromLeftOrRight fn. Need to test and see if
+*                 |              |      it runs properly. If it does, then we need to merge the
+*                 |              |      teliop changes into this V1.5.x auto_fix branch and test
+*                 |              |      agian. Need to be sure that we only keep teliop changes
+*                 |              |      from main branch.
+*         V1.5.3  | Quaid        |   The previous code didnt work because the step time vars
+*                 |              |      assumed milliseconds and the FPGA timer returns seconds
+*                 |              |      as a double.
+*         V1.5.4  | Quaid        |   Meerged in non auto changes from main branch V1.6.1 for
+*                 |              |      testing. If evereything behaves as expected, this code
+*                 |              |      will become V1.6.2 on the main branch
+*         V1.5.5  | Quaid        |   Auton logic fixed. Use the same logic that is in the 
+*                 |              |      exitFromLeftOrRight fn. The initial bug that caused all
+*                 |              |      of our issues was due to FPGA returning time as seconds,
+*                 |              |      not miliseconds, and our auto logic used miliseconds to
+*                 |              |      determine what step to run. The bug caused all of our
+*                 |              |      times to be 1000 times larger than we thought. There was
+*                 |              |      also an issue with forward being backward and backward
+*                 |              |      being forward, that was fixed as well.
+*         V1.5.6  | Quaid        |   There was a major bug causing the rio to crash durring the
+*                 |              |      match but not durring testing. The issue was caused by
+*                 |              |      the getAlly fn being called when the rio was powered on
+*                 |              |      but never agian. The rio was initializing the variable
+*                 |              |      with an unexpected value that crashed the code when that
+*                 |              |      variable is used.
 *         V1.6.0  | Damien       |   This code is the resulting code from the Belton
 *                 | Faylynn      |      district event with the addition of uncommenting
 *                 |              |      some auto code and opening up the drivetrain speed
@@ -52,7 +82,9 @@
 *                 |              |      to V1.5.0, and fix the auto logic from that version.
 *                 |              |      V1.5.0 auto logic ran the first step and never
 *                 |              |      continued passed that point. -Quaid
-*         V1.6.1  | All          |   This code is only working teliop code. BAD AUTO
+*         V1.7.0  | Quaid        |   This is a direct copy of V1.5.6 of the V1.5.x_auto_fix branch.
+*                 |              |      The do nothing and exit left or right auto is confirmed as
+*                 |              |      working at this point.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -82,28 +114,26 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
+import edu.wpi.first.cameraserver.*;
+
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import java.util.Optional;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkBase.IdleMode;
-import com.revrobotics.CANSparkLowLevel.MotorType;
-import com.revrobotics.CANSparkMax;
-
-import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
 public class Robot extends TimedRobot {
   public enum Speed {
@@ -133,15 +163,13 @@ public class Robot extends TimedRobot {
 
   private final DifferentialDrive m_robotDrive =
       new DifferentialDrive(m_motorcontroller1, m_motorcontroller3);
-  private final static Joystick m_controller = new Joystick(0); // note: here is how a controler is created. It will use the same functions as this one but have a different name and number
+  private final static Joystick m_controller = new Joystick(0);   // note: here is how a controler is created. It will use the same functions as this one but have a different name and number
   private final static Joystick n_controller = new Joystick(3);
 
-  Optional<Alliance> ally = DriverStation.getAlliance();
+  Optional<Alliance> ally;
 
   double autoStartDelay = SmartDashboard.getNumber("Auto Start Delay", 0);
   double autoLaunchDelay = SmartDashboard.getNumber("Auto Launch Delay", 0);
-
-  Timer timer = new Timer();
   // NOTE: variables
   // vvvvvvvvvvvvvvv
   boolean arcadeActive;
@@ -201,7 +229,8 @@ public class Robot extends TimedRobot {
     }
   }
 
-  void autodriveRed(double launchTimeElapsed) {}
+  void autodriveRed(double launchTimeElapsed) {
+  }
 
   private static final String kNothingAuto = "do nothing";
   private static final String kExitFromLeftOrRight = "exit left/right";
@@ -213,7 +242,6 @@ public class Robot extends TimedRobot {
   private static final String kLaunchAndExitFromSpeakerLeft = "launch exit speaker left";
   private static final String kLaunchAndExitFromSpeakerCenter = "launch exit speaker center";
   private static final String kLaunchAndExitFromSpeakerRight = "launch exit speaker right";
-
 
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -239,6 +267,60 @@ public class Robot extends TimedRobot {
     return initialValue;
   }*/
 
+  @Override
+  public void robotInit() {
+    CameraServer.startAutomaticCapture();
+
+    m_motorcontroller1.setInverted(false);
+    m_motorcontroller3.setInverted(true); // note: only invert this one because the otheer follows
+
+    m_feedWheel.setInverted(true);
+    m_launchWheel.setInverted(true);
+
+    // m_rollerClaw.setInverted(false);
+    m_climber.setInverted(true);
+
+    // UPDATE:
+    // UPDATE:
+    // UPDATE:
+    // UPDATE:
+    // UPDATE: UNCOMMENT THE AUTO OPTIONS THAT YOU WANT TO HAVE AVAILABLE
+    m_motorcontroller2.follow(m_motorcontroller1);
+    m_motorcontroller4.follow(m_motorcontroller3);
+    m_chooser.setDefaultOption("do nothing", kNothingAuto);
+    m_chooser.addOption(kExitFromLeftOrRight, kExitFromLeftOrRight);    
+    // m_chooser.addOption(kExitFromCenter, kExitFromCenter);    
+    // m_chooser.addOption(kExitFromAmp, kExitFromAmp);    
+    // m_chooser.addOption(kExitFromSpeakerLeft, kExitFromSpeakerLeft);    
+    // m_chooser.addOption(kExitFromSpeakerCenter, kExitFromSpeakerCenter);    
+    // m_chooser.addOption(kExitFromSpeakerRight, kExitFromSpeakerRight);    
+    // m_chooser.addOption(kLaunchAndExitFromSpeakerLeft, kLaunchAndExitFromSpeakerLeft);    
+    m_chooser.addOption(kLaunchAndExitFromSpeakerCenter, kLaunchAndExitFromSpeakerCenter);    
+    // m_chooser.addOption(kLaunchAndExitFromSpeakerRight, kLaunchAndExitFromSpeakerRight);   
+    SmartDashboard.putData("Auto choices", m_chooser);
+
+    m_motorcontroller1.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
+    m_motorcontroller2.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
+    m_motorcontroller3.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
+    m_motorcontroller4.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
+
+    // m_rollerClaw.setSmartCurrentLimit(60);
+    m_climber.setSmartCurrentLimit(60);
+
+    // m_rollerClaw.setIdleMode(IdleMode.kBrake);
+    m_climber.setIdleMode(IdleMode.kBrake);
+  }
+
+  public void robotPeriodic() {
+    SmartDashboard.putNumber("Time (seconds)", Timer.getFPGATimestamp());
+  }
+
+  //  CANSparkBase m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
+
+  CANSparkBase m_climber = new CANSparkMax(6, MotorType.kBrushless);
+
+  // --------------- Magic numbers. Use these to adjust settings. ---------------
+
   /**
    * How many amps can an individual drivetrain motor use.
    */
@@ -257,9 +339,9 @@ public class Robot extends TimedRobot {
   /**
    * Percent output to run the feeder when intaking note
    */
-  static final double FEEDER_IN_SPEED = .1;
+  static final double FEEDER_IN_SPEED = .5;
 
-  static final double LAUNCHER_IN_SPEED = .6;
+  static final double LAUNCHER_IN_SPEED = .7;
   /**
    * Percent output for amp or drop note, configure based on polycarb bend
    */
@@ -296,67 +378,6 @@ public class Robot extends TimedRobot {
   static final double CLIMER_EXTEND_POWER = .4;
   static final double CLIMER_RETRACT_POWER = .4;
 
-
-  @Override
-  public void robotInit() {
-    CameraServer.startAutomaticCapture();
-
-    m_motorcontroller1.setInverted(false);
-    m_motorcontroller3.setInverted(true); // note: only invert this one because the otheer follows
-
-    m_feedWheel.setInverted(true);
-    m_launchWheel.setInverted(true);
-
-    // m_rollerClaw.setInverted(false);
-    m_climber.setInverted(true);
-
-
-    // UPDATE:
-    // UPDATE:
-    // UPDATE:
-    // UPDATE:
-    // UPDATE: UNCOMMENT THE AUTO OPTIONS THAT YOU WANT TO HAVE AVAILABLE
-    m_motorcontroller2.follow(m_motorcontroller1);
-    m_motorcontroller4.follow(m_motorcontroller3);
-    m_chooser.setDefaultOption("do nothing", kNothingAuto);
-    m_chooser.addOption(kExitFromLeftOrRight, kExitFromLeftOrRight);
-    // m_chooser.addOption(kExitFromCenter, kExitFromCenter);    
-    // m_chooser.addOption(kExitFromAmp, kExitFromAmp);    
-    // m_chooser.addOption(kExitFromSpeakerLeft, kExitFromSpeakerLeft);    
-    // m_chooser.addOption(kExitFromSpeakerCenter, kExitFromSpeakerCenter);    
-    // m_chooser.addOption(kExitFromSpeakerRight, kExitFromSpeakerRight);    
-    // m_chooser.addOption(kLaunchAndExitFromSpeakerLeft, kLaunchAndExitFromSpeakerLeft);    
-    m_chooser.addOption(kLaunchAndExitFromSpeakerCenter, kLaunchAndExitFromSpeakerCenter);
-    // m_chooser.addOption(kLaunchAndExitFromSpeakerRight, kLaunchAndExitFromSpeakerRight);   
-    SmartDashboard.putData("Auto choices", m_chooser);
-
-
-    m_motorcontroller1.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
-    m_motorcontroller2.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
-    m_motorcontroller3.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
-    m_motorcontroller4.setSmartCurrentLimit(DRIVE_CURRENT_LIMIT_A);
-
-
-    // m_rollerClaw.setSmartCurrentLimit(60);
-    m_climber.setSmartCurrentLimit(60);
-
-    // m_rollerClaw.setIdleMode(IdleMode.kBrake);
-    m_climber.setIdleMode(IdleMode.kBrake);
-  }
-
-  public void robotPeriodic() {
-    SmartDashboard.putNumber("Time (seconds)", Timer.getFPGATimestamp());
-  }
-
-  //  CANSparkBase m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
-
-  CANSparkBase m_climber = new CANSparkMax(6, MotorType.kBrushless);
-
-
-  // --------------- Magic numbers. Use these to adjust settings. ---------------
-
-
-
   double AUTO_LAUNCH_DELAY_S;
   double AUTO_DRIVE_DELAY_S;
 
@@ -366,15 +387,12 @@ public class Robot extends TimedRobot {
   double AUTO_LAUNCHER_SPEED;
 
   double autonomousStartTime;
-  double currentTime;
 
-
-
-  void driveForward() {
+  void driveBackward() {
     m_robotDrive.tankDrive(.4, .5);
   }
 
-  void driveForward(Speed speed) {
+  void driveBackward(Speed speed) {
     switch (speed) {
       case LOW:
         m_robotDrive.tankDrive(.4, .5);
@@ -391,11 +409,11 @@ public class Robot extends TimedRobot {
     }
   }
 
-  void driveBackward() {
+  void driveForward() {
     m_robotDrive.tankDrive(-.4, -.5);
   }
 
-  void driveBackward(Speed speed) {
+  void driveForward(Speed speed) {
     switch (speed) {
       case LOW:
         m_robotDrive.tankDrive(-.4, -.5);
@@ -413,11 +431,11 @@ public class Robot extends TimedRobot {
   }
 
   void turnLeft() {
-    m_robotDrive.tankDrive(0, .6);
+    m_robotDrive.tankDrive(0, -.6);
   }
 
   void turnRight() {
-    m_robotDrive.tankDrive(.6, 0);
+    m_robotDrive.tankDrive(-.6, 0);
   }
 
   void extendClimber() {
@@ -459,25 +477,23 @@ public class Robot extends TimedRobot {
   /*auto functions*/
   /*VVVVVVVVVVVVVV*/
 
-
   void exitFromLeftOrRight(double autoTimeElapsed) {
 
-    if (autoTimeElapsed <= autoStartDelay) {
+    double step1Time = 3.0;    // drive forward for 3 seconds
 
+    if (autoTimeElapsed <= autoStartDelay) {
+      m_robotDrive.tankDrive(0, 0);
+    } else {
       if (ally.get() == Alliance.Red) {
-        if (Timer.getFPGATimestamp() < currentTime + 4.0) {
-          m_robotDrive.tankDrive(0.5, 0.5);
-        }
-        if (Timer.getFPGATimestamp() >= currentTime + 5.0) {
+        if (autoTimeElapsed <= autoStartDelay + step1Time) {
+          driveBackward();
+        } else {
           m_robotDrive.tankDrive(0, 0);
         }
-      }
-
-      if (ally.get() == Alliance.Blue) {
-        if (Timer.getFPGATimestamp() < currentTime + 4.0) {
-          m_robotDrive.tankDrive(0.5, 0.5);
-        }
-        if (Timer.getFPGATimestamp() >= currentTime + 5.0) {
+      } else if (ally.get() == Alliance.Blue) {
+        if (autoTimeElapsed <= autoStartDelay + step1Time) {
+          driveBackward();
+        } else {
           m_robotDrive.tankDrive(0, 0);
         }
       }
@@ -486,286 +502,264 @@ public class Robot extends TimedRobot {
 
   void exitFromCenter(double autoTimeElapsed) {
 
-    if (ally.get() == Alliance.Red) {
-      Timer cenRedTimer = new Timer();
+    double step1time = 3000;
+    double step2time = 3000;
+    double step3time = 3000;
+    double step4time = 3000;
 
-      cenRedTimer.reset();
-      if (cenRedTimer.get() < 3.0) {
-        m_robotDrive.tankDrive(0, 0);
+    if (autoTimeElapsed <= autoStartDelay) {
+      m_robotDrive.tankDrive(0, 0);
+    } else {
+      if (ally.get() == Alliance.Blue) {
+        if (autoTimeElapsed <= autoStartDelay + step1time && autoTimeElapsed > autoStartDelay) {
+          m_robotDrive.tankDrive(0, 0);
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            && autoTimeElapsed > autoStartDelay + step1time) {
+          driveForward();
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time + step3time
+            && autoTimeElapsed > autoStartDelay + step1time + step2time) {
+          turnLeft();
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time + step3time + step4time
+            && autoTimeElapsed > autoStartDelay + step1time + step2time + step3time) {
+          driveForward();
+        } else {
+          m_robotDrive.tankDrive(0, 0);
+        }
       }
-      if (cenRedTimer.get() < 6.0 && cenRedTimer.get() > 3.0) {
-        driveForward();
-      }
-      if (cenRedTimer.get() < 9.0 && cenRedTimer.get() > 6.0) {
-        turnRight();
-      }
-      if (cenRedTimer.get() < 12.0 && cenRedTimer.get() > 9.0) {
-        driveForward();
-      }
-      if (cenRedTimer.get() < 15.0 && cenRedTimer.get() > 12.0) {
-        m_robotDrive.tankDrive(0, 0);
-      }
-    }
 
-    if (ally.get() == Alliance.Blue) {
-      Timer cenBluTimer = new Timer();
-
-      cenBluTimer.reset();
-      if (cenBluTimer.get() < 3.0) {
-        m_robotDrive.tankDrive(0, 0);
-      }
-      if (cenBluTimer.get() < 6.0 && cenBluTimer.get() > 3.0) {
-        driveForward();
-      }
-      if (cenBluTimer.get() < 9.0 && cenBluTimer.get() > 6.0) {
-        turnLeft();
-      }
-      if (cenBluTimer.get() < 12.0 && cenBluTimer.get() > 9.0) {
-        driveForward();
-      }
-      if (cenBluTimer.get() < 15.0 && cenBluTimer.get() > 12.0) {
-        m_robotDrive.tankDrive(0, 0);
+      if (ally.get() == Alliance.Red) {
+        if (autoTimeElapsed <= autoStartDelay + step1time) {
+          m_robotDrive.tankDrive(0, 0);
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time) {
+        }
+        if (autoTimeElapsed <= autoStartDelay + step1time) {
+          driveForward();
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time) {
+          turnRight();
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time) {
+          driveForward();
+        } else {
+          m_robotDrive.tankDrive(0, 0);
+        }
       }
     }
   }
+  
 
+  void exitFromAmp(double autoTimeElapsed) {
 
-  void exitFromAmp() {
+    double step1time = 3.0;
+    //double step2time = 4.0;
+    //double step3time = 10.0;
 
-    Timer redtimer = new Timer();
+    if (ally.get() == Alliance.Red) {
+      do {
+        driveBackward();
+        if (autoTimeElapsed == 0.0) {
+          break;
+        }
+      } while (step1time > autoTimeElapsed);
+      // } while (step2time >= autoTimeElapsed && step1time < autoTimeElapsed) {
+      //   turnLeft();
+      // } while (step3time >= autoTimeElapsed && step2time < autoTimeElapsed ) {
+      //   driveForward();
 
-    redtimer.restart();
-    if (redtimer.get() < 4.0) {
-      m_robotDrive.tankDrive(-0.5, -0.5);
-    }
-    redtimer.restart();
-    if (redtimer.get() < 2.0) {
-      turnRight();
-    }
-    redtimer.restart();
-    if (redtimer.get() < 5.0) {
-      driveForward();
-    }
-    if (redtimer.get() >= 15.0) {
       m_robotDrive.tankDrive(0, 0);
     }
 
-    if (ally.get() == Alliance.Blue) {
-      Timer bluetimer = new Timer();
-
-      bluetimer.restart();
-      if (bluetimer.get() < 4.0) {
-        m_robotDrive.tankDrive(-0.5, -0.5);
-      }
-      bluetimer.restart();
-      if (bluetimer.get() < 2.0) {
-        turnLeft();
-      }
-      bluetimer.restart();
-      if (bluetimer.get() < 5.0) {
-        driveForward();
-      }
-      if (bluetimer.get() >= 15.0) {
-        m_robotDrive.tankDrive(0, 0);
-      }
+    else if (ally.get() == Alliance.Blue) {
+      do {
+        driveBackward();
+        if (autoTimeElapsed == 0.0) {
+          break;
+        }
+      } while (step1time > autoTimeElapsed);
+      // } while (step2time >= autoTimeElapsed && step1time < autoTimeElapsed) {
+      //   turnLeft();
+      // } while (step3time >= autoTimeElapsed && step2time < autoTimeElapsed ) {
+      //   driveForward();
     }
+    m_robotDrive.tankDrive(0, 0);
   }
 
-
-
   void exitFromSpeakerA(double autoTimeElapsed) { // red left and blue right
-    Timer ATimer = new Timer();
+    double step1time = 1000;
+    double step2time = 1000;
+    double step3time = 1000;
 
-    ATimer.restart();
-    if (ally.get() == Alliance.Blue) {
-      if (ATimer.get() < 3.0) {
+    if (ally.get() == Alliance.Red) {
+      if (autoTimeElapsed <= autoStartDelay + step1time) {
         driveBackward();
-      }
-      if (ATimer.get() < 6.0 && ATimer.get() > 3.0) {
-        turnLeft();
-      }
-      if (ATimer.get() < 10.0 && ATimer.get() > 6.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time) {
+        turnRight();
+      } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time) {
         driveBackward();
-      }
-      if (ATimer.get() == 15.0) {
+      } else {
         m_robotDrive.tankDrive(0, 0);
       }
     }
 
-    if (ally.get() == Alliance.Red) {
-      if (ATimer.get() < 3.0) {
+    if (ally.get() == Alliance.Blue) {
+      if (autoTimeElapsed <= autoStartDelay + step1time) {
         driveBackward();
-      }
-      if (ATimer.get() < 6.0 && ATimer.get() > 3.0) {
-        turnRight();
-      }
-      if (ATimer.get() < 10.0 && ATimer.get() > 6.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time) {
+        turnLeft();
+      } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time) {
         driveBackward();
-      }
-      if (ATimer.get() == 15.0) {
+      } else {
         m_robotDrive.tankDrive(0, 0);
       }
     }
   }
 
   void exitFromSpeakerB(double autoTimeElapsed) { // red right and blue left
-    Timer BTimer = new Timer();
+    double step1time = 3000;
+    double step2time = 6000;
+    double step3time = 10000;
 
-    BTimer.restart();
     if (ally.get() == Alliance.Blue) {
-      if (BTimer.get() < 3.0) {
+      if (autoTimeElapsed <= autoStartDelay + step1time) {
         driveBackward();
-      }
-      if (BTimer.get() < 6.0 && BTimer.get() > 3.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time) {
         turnRight();
-      }
-      if (BTimer.get() < 10.0 && BTimer.get() > 6.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time) {
         driveBackward();
-      }
-      if (BTimer.get() == 15.0) {
+      } else {
         m_robotDrive.tankDrive(0, 0);
       }
     }
 
     if (ally.get() == Alliance.Red) {
-      if (BTimer.get() < 3.0) {
+      if (autoTimeElapsed <= autoStartDelay + step1time) {
         driveBackward();
-      }
-      if (BTimer.get() < 6.0 && BTimer.get() > 3.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time) {
         turnLeft();
-      }
-      if (BTimer.get() < 10.0 && BTimer.get() > 6.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time) {
         driveBackward();
-      }
-      if (BTimer.get() == 15.0) {
+      } else {
         m_robotDrive.tankDrive(0, 0);
       }
     }
   }
 
   void launchAndExitFromSpeakerA(double autoTimeElapsed) { // red left and blue right
-    Timer launchATimer = new Timer();
+    double step1time = 1250;
+    double step2time = 2000;
+    double step3time = 3000;
+    double step4time = 4000;
 
-    launchATimer.restart();
+    double startTime = 1;
+    boolean firstCall = true;
+
     if (ally.get() == Alliance.Red) {
-      if (launchATimer.get() == 0.0) {
+      if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay && autoTimeElapsed > autoStartDelay + autoLaunchDelay) {
         m_robotDrive.tankDrive(0, 0);
-      }
-      if (launchATimer.get() < 1.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(0.0);
-      }
-      if (launchATimer.get() < 2.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(FEEDER_OUT_SPEED);
-      }
-
-      if (launchATimer.get() < 5.0 && launchATimer.get() > 2.25) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time
+          && autoTimeElapsed > autoStartDelay + autoLaunchDelay + step1time) {
+        if (firstCall) {
+          startTime = Timer.getFPGATimestamp();
+          launchNote(Timer.getFPGATimestamp() - startTime);
+          firstCall = false;
+        } else {
+          launchNote(Timer.getFPGATimestamp() - startTime);
+        }
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time) {
         driveBackward();
-        m_launchWheel.set(0);
-        m_feedWheel.set(0);
-      }
-      if (launchATimer.get() < 8.0 && launchATimer.get() > 5.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+          + step3time) {
         turnLeft();
-      }
-      if (launchATimer.get() < 10.0 && launchATimer.get() > 8.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+          + step3time + step4time) {
         driveBackward();
-      }
-      if (launchATimer.get() == 15.0) {
+      } else {
         m_robotDrive.tankDrive(0, 0);
       }
     }
 
     if (ally.get() == Alliance.Blue) {
-      if (launchATimer.get() == 0.0) {
+      if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay && autoTimeElapsed > autoStartDelay + autoLaunchDelay) {
         m_robotDrive.tankDrive(0, 0);
-      }
-      if (launchATimer.get() < 1.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(0.0);
-      }
-      if (launchATimer.get() < 2.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(FEEDER_OUT_SPEED);
-      }
-
-      if (Timer.getFPGATimestamp() < 5.0 && Timer.getFPGATimestamp() > 2.25) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time
+          && autoTimeElapsed > autoStartDelay + autoLaunchDelay + step1time) {
+        if (firstCall) {
+          startTime = Timer.getFPGATimestamp();
+          launchNote(Timer.getFPGATimestamp() - startTime);
+          firstCall = false;
+        } else {
+          launchNote(Timer.getFPGATimestamp() - startTime);
+        }
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time) {
         driveBackward();
-        m_launchWheel.set(0);
-        m_feedWheel.set(0);
-      }
-      if (Timer.getFPGATimestamp() < 8.0 && Timer.getFPGATimestamp() > 5.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+          + step3time) {
         turnRight();
-      }
-      if (Timer.getFPGATimestamp() < 10.0 && Timer.getFPGATimestamp() > 8.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+          + step3time + step4time) {
         driveBackward();
-      }
-      if (Timer.getFPGATimestamp() == 15.0) {
+      } else {
         m_robotDrive.tankDrive(0, 0);
       }
     }
   }
 
   void launchAndExitFromSpeakerB(double autoTimeElapsed) { // red right and blue left
+    double step1time = 1250;
+    double step2time = 2000;
+    double step3time = 3000;
+    double step4time = 4000;
+
+    double startTime = 0;
+    boolean firstCall = true;
 
     if (ally.get() == Alliance.Red) {
-      if (Timer.getFPGATimestamp() == 0.0) {
+      if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay && autoTimeElapsed > autoStartDelay + autoLaunchDelay) {
         m_robotDrive.tankDrive(0, 0);
-      }
-      if (Timer.getFPGATimestamp() < 1.25 && Timer.getFPGATimestamp() > 0.0) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(0.0);
-      }
-      if (Timer.getFPGATimestamp() < 2.25 && Timer.getFPGATimestamp() > 1.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(FEEDER_OUT_SPEED);
-      }
-
-      if (Timer.getFPGATimestamp() < 5.0 && Timer.getFPGATimestamp() > 2.25) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time
+          && autoTimeElapsed > autoStartDelay + autoLaunchDelay + step1time) {
+        if (firstCall) {
+          startTime = Timer.getFPGATimestamp();
+          launchNote(Timer.getFPGATimestamp() - startTime);
+          firstCall = false;
+        } else {
+          launchNote(Timer.getFPGATimestamp() - startTime);
+        }
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time) {
         driveBackward();
-        m_launchWheel.set(0);
-        m_feedWheel.set(0);
-      }
-      if (Timer.getFPGATimestamp() < 8.0 && Timer.getFPGATimestamp() > 5.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+          + step3time) {
         turnLeft();
-      }
-      if (Timer.getFPGATimestamp() < 10.0 && Timer.getFPGATimestamp() > 8.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+          + step3time + step4time) {
         driveBackward();
-      }
-      if (Timer.getFPGATimestamp() == 15.0) {
+      } else {
         m_robotDrive.tankDrive(0, 0);
       }
     }
 
     if (ally.get() == Alliance.Blue) {
-      if (Timer.getFPGATimestamp() == 0.0) {
+      if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay && autoTimeElapsed > autoStartDelay + autoLaunchDelay) {
         m_robotDrive.tankDrive(0, 0);
-      }
-      if (Timer.getFPGATimestamp() < 1.25 && Timer.getFPGATimestamp() > 0.0) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(0.0);
-      }
-      if (Timer.getFPGATimestamp() < 2.25 && Timer.getFPGATimestamp() > 1.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(FEEDER_OUT_SPEED);
-      }
-
-      if (Timer.getFPGATimestamp() < 5.0 && Timer.getFPGATimestamp() > 2.25) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time
+          && autoTimeElapsed > autoStartDelay + autoLaunchDelay + step1time) {
+        if (firstCall) {
+          startTime = Timer.getFPGATimestamp();
+          launchNote(Timer.getFPGATimestamp() - startTime);
+          firstCall = false;
+        } else {
+          launchNote(Timer.getFPGATimestamp() - startTime);
+        }
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time) {
         driveBackward();
-        m_launchWheel.set(0);
-        m_feedWheel.set(0);
-      }
-      if (Timer.getFPGATimestamp() < 8.0 && Timer.getFPGATimestamp() > 5.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+          + step3time) {
         turnRight();
-      }
-      if (Timer.getFPGATimestamp() < 10.0 && Timer.getFPGATimestamp() > 8.0) {
+      } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+          + step3time + step4time) {
         driveBackward();
-      }
-      if (Timer.getFPGATimestamp() == 15.0) {
+      } else {
         m_robotDrive.tankDrive(0, 0);
       }
     }
-
   }
 
   void exitFromSpeakerLeft(double autoTimeElapsed) {
@@ -783,48 +777,47 @@ public class Robot extends TimedRobot {
 
   void exitFromSpeakerCenter(double autoTimeElapsed) {
 
+    double step1time = 1000;
+    double step2time = 1000;
+    double step3time = 1000;
+    double step4time = 1000;
+    double step5time = 1000;
+
     if (autoTimeElapsed <= autoStartDelay && autoTimeElapsed > autoStartDelay + autoLaunchDelay) {
       m_robotDrive.tankDrive(0, 0);
     } else {
       Optional<Alliance> ally = DriverStation.getAlliance();
       if (ally.get() == Alliance.Red) {
-        double fpgaTimestamp = Timer.getFPGATimestamp();
-        if (fpgaTimestamp < 3.0) {
+        if (autoTimeElapsed <= autoStartDelay + step1time) {
           driveBackward();
-        }
-        if (Timer.getFPGATimestamp() < 6.0 && Timer.getFPGATimestamp() > 3.0) {
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time) {
           turnRight();
-        }
-        if (Timer.getFPGATimestamp() < 9.0 && Timer.getFPGATimestamp() > 6.0) {
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time) {
           driveBackward();
-        }
-        if (Timer.getFPGATimestamp() < 12.0 && Timer.getFPGATimestamp() > 9.0) {
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time
+            + step4time) {
           turnLeft();
-        }
-        if (Timer.getFPGATimestamp() < 15.0 && Timer.getFPGATimestamp() > 12.0) {
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time + step4time
+            + step5time) {
           driveBackward();
-        }
-        if (Timer.getFPGATimestamp() == 15.0) {
+        } else {
           m_robotDrive.tankDrive(0, 0);
         }
       }
       if (ally.get() == Alliance.Blue) {
-        if (Timer.getFPGATimestamp() < 3.0) {
+        if (autoTimeElapsed <= autoStartDelay + step1time) {
           driveBackward();
-        }
-        if (Timer.getFPGATimestamp() < 6.0 && Timer.getFPGATimestamp() > 3.0) {
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time) {
           turnLeft();
-        }
-        if (Timer.getFPGATimestamp() < 9.0 && Timer.getFPGATimestamp() > 6.0) {
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time) {
           driveBackward();
-        }
-        if (Timer.getFPGATimestamp() < 12.0 && Timer.getFPGATimestamp() > 9.0) {
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time
+            + step4time) {
           turnRight();
-        }
-        if (Timer.getFPGATimestamp() < 15.0 && Timer.getFPGATimestamp() > 12.0) {
+        } else if (autoTimeElapsed <= autoStartDelay + step1time + step2time + step3time + step4time
+            + step5time) {
           driveBackward();
-        }
-        if (Timer.getFPGATimestamp() == 15.0) {
+        } else {
           m_robotDrive.tankDrive(0, 0);
         }
       }
@@ -857,7 +850,93 @@ public class Robot extends TimedRobot {
     }
   }
 
+  void launchAndExitFromSpeakerCenter(double autoTimeElapsed) {
+
+    double step1time = 1250;
+    double step2time = 4000;
+    double step3time = 0;
+    double step4time = 0;
+    double step5time = 0;
+    double step6time = 0;
+
+    double startTime = 0;
+    boolean firstCall = true;
+    if (autoTimeElapsed <= autoStartDelay + step1time && autoTimeElapsed > autoStartDelay + autoLaunchDelay) {
+      m_robotDrive.tankDrive(0, 0);
+    } else {
+      if (ally.get() == Alliance.Red) {
+        if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + autoLaunchDelay
+            && autoTimeElapsed > autoStartDelay + autoLaunchDelay + step1time) {
+          m_robotDrive.tankDrive(0, 0);
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time) {
+          if (firstCall) {
+            startTime = Timer.getFPGATimestamp();
+            launchNote(Timer.getFPGATimestamp() - startTime);
+            firstCall = false;
+          } else {
+            launchNote(Timer.getFPGATimestamp() - startTime);
+          }
+
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            && autoTimeElapsed > autoStartDelay + step1time + step2time) {
+          driveBackward();
+          m_launchWheel.set(0);
+          m_feedWheel.set(0);
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            + step3time) {
+          turnRight();
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            + step3time + step4time) {
+          driveBackward();
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            + step3time + step4time + step5time) {
+          turnLeft();
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            + step3time + step4time + step5time + step6time) {
+          driveBackward();
+        } else {
+          m_robotDrive.tankDrive(0, 0);
+        }
+
+      }
+
+      if (ally.get() == Alliance.Blue) {
+        if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay && autoTimeElapsed > autoStartDelay + autoLaunchDelay) {
+          m_robotDrive.tankDrive(0, 0);
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time
+            && autoTimeElapsed > autoStartDelay + autoLaunchDelay + step1time) {
+          if (firstCall) {
+            startTime = Timer.getFPGATimestamp();
+            launchNote(Timer.getFPGATimestamp() - startTime);
+            firstCall = false;
+          } else {
+            launchNote(Timer.getFPGATimestamp() - startTime);
+          }
+
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time) {
+          driveBackward();
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            + step3time) {
+          turnLeft();
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            + step3time + step4time) {
+          driveBackward();
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            + step3time + step4time + step5time) {
+          turnRight();
+        } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time
+            + step3time + step4time + step5time + step6time) {
+          driveBackward();
+        } else {
+          m_robotDrive.tankDrive(0, 0);
+        }
+
+      }
+    }
+  }
+
   void launchAndExitFromSpeakerRight(double autoTimeElapsed) {
+
     if (autoTimeElapsed <= autoStartDelay) {
       m_robotDrive.tankDrive(0, 0);
     } else {
@@ -870,79 +949,8 @@ public class Robot extends TimedRobot {
     }
   }
 
-  void launchAndExitFromSpeakerCenter(double autoTimeElapsed) {
-
-    if (ally.get() == Alliance.Red) {
-      if (Timer.getFPGATimestamp() == 0.0) {
-        m_robotDrive.tankDrive(0, 0);
-      }
-      if (Timer.getFPGATimestamp() < currentTime + 1.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(0.0);
-      }
-      if (Timer.getFPGATimestamp() < currentTime + 2.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(FEEDER_OUT_SPEED);
-      }
-
-    }
-    if (Timer.getFPGATimestamp() < currentTime + 5.25
-        && Timer.getFPGATimestamp() > currentTime + 2.25) {
-      //driveForward();
-      m_launchWheel.set(0);
-      m_feedWheel.set(0);
-      //  } while (launchTimer.get() < 8.0 && launchTimer.get() > 5.0) {
-      //   turnRight();
-      // } while (launchTimer.get() < 10.0 && launchTimer.get() > 8.0) {
-      //   driveForward();
-      // } while (launchTimer.get() < 12.0 && launchTimer.get() > 10.0) {
-      //   turnLeft();
-      // } while (launchTimer.get() < 15.0 && launchTimer.get() > 12.0) {
-      //   driveForward();
-    }
-    if (Timer.getFPGATimestamp() >= currentTime + 5.25) {
-      m_robotDrive.tankDrive(0, 0);
-    }
-
-
-
-    if (ally.get() == Alliance.Blue) {
-      if (Timer.getFPGATimestamp() == 0.0) {
-        m_robotDrive.tankDrive(0, 0);
-      }
-      if (Timer.getFPGATimestamp() < currentTime + 1.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(0.0);
-      }
-      if (Timer.getFPGATimestamp() < currentTime + 2.25) {
-        m_launchWheel.set(LAUNCHER_SPEED);
-        m_feedWheel.set(FEEDER_OUT_SPEED);
-      }
-
-      if (Timer.getFPGATimestamp() < currentTime + 5.25
-          && Timer.getFPGATimestamp() > currentTime + 2.25) {
-        //driveBackward();
-        m_launchWheel.set(0);
-        m_feedWheel.set(0);
-        //  } while (launchTimer.get() < 8.0 && launchTimer.get() > 5.0) {
-        //   turnLeft();
-        // } while (launchTimer.get() < 10.0 && launchTimer.get() > 8.0) {
-        //   driveBackward();
-        // } while (launchTimer.get() < 12.0 && launchTimer.get() > 10.0) {
-        //   turnRight();
-        // } while (launchTimer.get() < 15.0 && launchTimer.get() > 12.0) {
-        //   driveBackward();
-      }
-      if (Timer.getFPGATimestamp() >= currentTime + 5.25) {
-        m_robotDrive.tankDrive(0, 0);
-      }
-    }
-  }
-
-
   /*^^^^^^^^^^^^^^*/
   /*auto functions*/
-
 
   @Override
   public void autonomousInit() {
@@ -956,14 +964,16 @@ public class Robot extends TimedRobot {
     m_motorcontroller3.setIdleMode(IdleMode.kBrake);
     m_motorcontroller4.setIdleMode(IdleMode.kBrake);
 
-    AUTO_LAUNCH_DELAY_S = 7;
+    AUTO_LAUNCH_DELAY_S = 0;
+    AUTO_DRIVE_DELAY_S = 3;
 
     AUTO_DRIVE_TIME_S = 2.0;
     AUTO_DRIVE_SPEED = -0.5;
     AUTO_LAUNCHER_SPEED = 1;
 
-    // autonomousStartTime = Timer.getFPGATimestamp();
-    // timer.restart();
+    ally = DriverStation.getAlliance();
+
+    autonomousStartTime = Timer.getFPGATimestamp();
 
     switch (m_autoSelected) {
       case kNothingAuto:
@@ -979,7 +989,7 @@ public class Robot extends TimedRobot {
         break;
 
       case kExitFromAmp:
-        exitFromAmp();
+        exitFromAmp(0);
         break;
 
       case kExitFromSpeakerLeft:
@@ -1012,73 +1022,57 @@ public class Robot extends TimedRobot {
     }
   }
 
-
   @Override
   public void autonomousPeriodic() {
-    // if (timer.get()<5){
-    //   m_launchWheel.set(LAUNCHER_SPEED);
-    //   m_feedWheel.set(0);
-    // }
-    // else if (timer.get()<7){
-    //   m_launchWheel.set(LAUNCHER_SPEED);
-    //   m_feedWheel.set(FEEDER_OUT_SPEED);
-    // }
-    // else{
-    //   m_launchWheel.set(0);
-    //   m_feedWheel.set(0);
-    // }
+    double autoTimeElapsed = Timer.getFPGATimestamp() - autonomousStartTime;
+    SmartDashboard.putNumber("autoTimeElapsed", autoTimeElapsed);
+
+    switch (m_autoSelected) {
+      case kNothingAuto:
+        m_robotDrive.arcadeDrive(0, 0);
+        break;
+
+      case kExitFromLeftOrRight:
+        exitFromLeftOrRight(autoTimeElapsed);
+        break;
+
+      case kExitFromCenter:
+        exitFromCenter(autoTimeElapsed);
+        break;
+
+      case kExitFromAmp:
+        exitFromAmp(autoTimeElapsed);
+        break;
+
+      case kExitFromSpeakerLeft:
+        exitFromSpeakerLeft(autoTimeElapsed);
+        break;
+
+      case kExitFromSpeakerCenter:
+        exitFromSpeakerCenter(autoTimeElapsed);
+        break;
+
+      case kExitFromSpeakerRight:
+        exitFromSpeakerRight(autoTimeElapsed);
+        break;
+
+      case kLaunchAndExitFromSpeakerLeft:
+        launchAndExitFromSpeakerLeft(autoTimeElapsed);
+        break;
+
+      case kLaunchAndExitFromSpeakerCenter:
+        launchAndExitFromSpeakerCenter(autoTimeElapsed);
+        break;
+
+      case kLaunchAndExitFromSpeakerRight:
+        launchAndExitFromSpeakerRight(autoTimeElapsed);
+        break;
+
+      default:
+        m_robotDrive.arcadeDrive(0, autoTimeElapsed);
+        break;
+    }
   }
-
-  //   double autoTimeElapsed = Timer.getFPGATimestamp() - autonomousStartTime;
-  //   SmartDashboard.putNumber("autoTimeElapsed", autoTimeElapsed);
-
-  //   switch (m_autoSelected) {
-  //     case kNothingAuto:
-  //       m_robotDrive.arcadeDrive(0, 0);
-  //       break;
-
-  //     case kExitFromLeftOrRight:
-  //       exitFromLeftOrRight(autoTimeElapsed);
-  //       break;
-
-  //     case kExitFromCenter:
-  //       exitFromCenter(autoTimeElapsed);
-  //       break;
-
-  //     case kExitFromAmp:
-  //       exitFromAmp(autoTimeElapsed);
-  //       break;
-
-  //     case kExitFromSpeakerLeft:
-  //       exitFromSpeakerLeft(autoTimeElapsed);
-  //       break;
-
-  //     case kExitFromSpeakerCenter:
-  //       exitFromSpeakerCenter(autoTimeElapsed);
-  //       break;
-
-  //     case kExitFromSpeakerRight:
-  //       exitFromSpeakerRight(autoTimeElapsed);
-  //       break;
-
-  //     case kLaunchAndExitFromSpeakerLeft:
-  //       launchAndExitFromSpeakerLeft(autoTimeElapsed);
-  //       break;
-
-  //     case kLaunchAndExitFromSpeakerCenter:
-  //       launchAndExitFromSpeakerCenter(autoTimeElapsed);
-  //       break;
-
-  //     case kLaunchAndExitFromSpeakerRight:
-  //       launchAndExitFromSpeakerRight(autoTimeElapsed);
-  //       break;
-
-  //     default:
-  //       m_robotDrive.arcadeDrive(0, autoTimeElapsed);
-  //       break;
-  //   }
-
-
 
   @Override
   public void teleopInit() {
@@ -1088,13 +1082,10 @@ public class Robot extends TimedRobot {
     m_motorcontroller4.setIdleMode(IdleMode.kBrake);
   }
 
-
   @Override
   public void teleopPeriodic() {
     m_robotDrive.arcadeDrive(-m_controller.getRawAxis(drivetrainSpeedAxis) * motorSpeedLimit,
         -m_controller.getRawAxis(drivetrainRotateAxis) * motorRotateSpeedLimit);
-
-
 
     if (m_controller.getRawButton(intakeFunctionButton) && noteDetectionLimitSwich.get()) {
       m_launchWheel.set(-LAUNCHER_IN_SPEED);
@@ -1103,7 +1094,6 @@ public class Robot extends TimedRobot {
       m_launchWheel.set(0);
       m_feedWheel.set(0);
     }
-
 
     if (m_controller.getRawButton(ampFunctionButton)) {
       m_feedWheel.set(FEEDER_AMP_SPEED);
@@ -1133,12 +1123,12 @@ public class Robot extends TimedRobot {
     updateClimber(Logic.OLD);
   }
 
+  @Override
+  public void testInit() {
+  }
 
   @Override
-  public void testInit() {}
-
-
-  @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+  }
 
 }
