@@ -76,6 +76,12 @@
 *                 |              |      times to be 1000 times larger than we thought. There was
 *                 |              |      also an issue with forward being backward and backward
 *                 |              |      being forward, that was fixed as well.
+*         V1.5.6  | Quaid        |   There was a major bug causing the rio to crash durring the
+*                 |              |      match but not durring testing. The issue was caused by
+*                 |              |      the getAlly fn being called when the rio was powered on
+*                 |              |      but never agian. The rio was initializing the variable
+*                 |              |      with an unexpected value that crashed the code when that
+*                 |              |      variable is used.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -157,7 +163,7 @@ public class Robot extends TimedRobot {
   private final static Joystick m_controller = new Joystick(0);   // note: here is how a controler is created. It will use the same functions as this one but have a different name and number
   private final static Joystick n_controller = new Joystick(3);
 
-  Optional<Alliance> ally = DriverStation.getAlliance();
+  Optional<Alliance> ally;
 
   double autoStartDelay = SmartDashboard.getNumber("Auto Start Delay", 0);
   double autoLaunchDelay = SmartDashboard.getNumber("Auto Launch Delay", 0);
@@ -961,6 +967,8 @@ public class Robot extends TimedRobot {
     AUTO_DRIVE_TIME_S = 2.0;
     AUTO_DRIVE_SPEED = -0.5;
     AUTO_LAUNCHER_SPEED = 1;
+
+    ally = DriverStation.getAlliance();
 
     autonomousStartTime = Timer.getFPGATimestamp();
 

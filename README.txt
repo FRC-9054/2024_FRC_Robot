@@ -81,6 +81,12 @@ Robot code for 2024 FRC game
 *                 |              |      times to be 1000 times larger than we thought. There was
 *                 |              |      also an issue with forward being backward and backward
 *                 |              |      being forward, that was fixed as well.
+*         V1.5.6  | Quaid        |   There was a major bug causing the rio to crash durring the
+*                 |              |      match but not durring testing. The issue was caused by
+*                 |              |      the getAlly fn being called when the rio was powered on
+*                 |              |      but never agian. The rio was initializing the variable
+*                 |              |      with an unexpected value that crashed the code when that
+*                 |              |      variable is used.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
