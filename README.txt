@@ -90,6 +90,10 @@ Robot code for 2024 FRC game
 *         V1.7.0  | Quaid        |   This is a direct copy of V1.5.6 of the V1.5.x_auto_fix branch.
 *                 |              |      The do nothing and exit left or right auto is confirmed as
 *                 |              |      working at this point.
+*         V1.7.1  | All          |   Finnessed the launch and exit from speaker left logic to ignore
+*                 |              |      alliance color and just launch then drive backwards. Stopping
+*                 |              |      this auto is done by hitting the e stop button if needed. We
+*                 |              |      also tuned thee drive back function to not curve.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
