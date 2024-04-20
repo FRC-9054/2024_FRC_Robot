@@ -94,6 +94,8 @@ Robot code for 2024 FRC game
 *                 |              |      alliance color and just launch then drive backwards. Stopping
 *                 |              |      this auto is done by hitting the e stop button if needed. We
 *                 |              |      also tuned thee drive back function to not curve.
+*         V1.8.0  | All          |  Post state comp code. Some attempts to debug autonomous. Still a
+*                 |              |      problem.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!

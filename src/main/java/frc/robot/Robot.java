@@ -89,6 +89,8 @@
 *                 |              |      alliance color and just launch then drive backwards. Stopping
 *                 |              |      this auto is done by hitting the e stop button if needed. We
 *                 |              |      also tuned thee drive back function to not curve.
+*         V1.8.0  | All          |  Post state comp code. Some attempts to debug autonomous. Still a
+*                 |              |      problem.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -168,7 +170,7 @@ public class Robot extends TimedRobot {
   private final DifferentialDrive m_robotDrive =
       new DifferentialDrive(m_motorcontroller1, m_motorcontroller3);
   private final static Joystick m_controller = new Joystick(0);   // note: here is how a controler is created. It will use the same functions as this one but have a different name and number
-  private final static Joystick n_controller = new Joystick(3);
+  private final static Joystick n_controller = new Joystick(1);
 
   Optional<Alliance> ally;
 
@@ -182,13 +184,13 @@ public class Robot extends TimedRobot {
   double previousLeftMotorSpeed = 0;
   double previousRightMotorSpeed = 0;
   double launchStartTime = 0;
-  double launchTimeElapsed = 0;
+  // double launchTimeElapsed = 0;
   double teliopLaunchTimeElapsed = 0;
   double teliopLaunchStartTime = 0;
   double launchWheelTime = 1.0;
   Boolean previousLaunchButtonPos = false;
   boolean firstCall = true;
-  double startTime;
+  double startTime = 0.0;
 
   // note: button functions 
   // vvvvvvvvvvvvvvvvvvvvvv
@@ -394,7 +396,7 @@ public class Robot extends TimedRobot {
   double AUTO_DRIVE_SPEED;
   double AUTO_LAUNCHER_SPEED;
 
-  double autonomousStartTime;
+  double autonomousStartTime = 0.0;
 
   void driveBackward() {
     m_robotDrive.tankDrive(.5, .5);   // .5 and .42 maybe?
@@ -658,29 +660,37 @@ public class Robot extends TimedRobot {
 
   void launchAndExitFromSpeakerA(double autoTimeElapsed) { // red left and blue right
     double step1time = 1.5;
-    double step2time = 6.5;
-    double step3time = 0.0;
-    double step4time = 0.0;
+    double step2time = 0.0;
+    // double step3time = 0.0;
+    // double step4time = 0.0;
     autoStartDelay = 1.0;
 
     
 
-    if (ally.get() == Alliance.Red) {
+    // if (ally.get() == Alliance.Red) {
+    if (true) {
       if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay) {
         m_robotDrive.tankDrive(0, 0);
       } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time) {
         if (firstCall) {
           startTime = Timer.getFPGATimestamp();
-          launchNote(Timer.getFPGATimestamp() - startTime);
+          launchNote(0.0);
           firstCall = false;
+          SmartDashboard.putNumber("DBG pos", 1);
         } else {
           launchNote(Timer.getFPGATimestamp() - startTime);
+          SmartDashboard.putNumber("DBG pos", 2);
         }
       } else if (autoTimeElapsed <= autoStartDelay + autoLaunchDelay + step1time + step2time) {
         driveBackward();
       } else {
+
         m_robotDrive.tankDrive(0, 0);
       }
+     
+     }
+      double launchTime = Timer.getFPGATimestamp() - startTime;
+      SmartDashboard.putNumber("launch time",launchTime);
     }
 
     // if (ally.get() == Alliance.Blue) {
@@ -706,7 +716,8 @@ public class Robot extends TimedRobot {
     //     m_robotDrive.tankDrive(0, 0);
     //   }
     // }
-  }
+  
+
 
   void launchAndExitFromSpeakerB(double autoTimeElapsed) { // red right and blue left
     double step1time = 1.5;
@@ -962,17 +973,20 @@ public class Robot extends TimedRobot {
     autoStartDelay = SmartDashboard.getNumber("Auto Start Delay", 0);
     autoLaunchDelay = SmartDashboard.getNumber("Auto Launch Delay", 0);
 
+    SmartDashboard.putNumber("DBG pos", 0);
+
     m_motorcontroller1.setIdleMode(IdleMode.kBrake);
     m_motorcontroller2.setIdleMode(IdleMode.kBrake);
     m_motorcontroller3.setIdleMode(IdleMode.kBrake);
     m_motorcontroller4.setIdleMode(IdleMode.kBrake);
 
-    AUTO_LAUNCH_DELAY_S = 0;
-    AUTO_DRIVE_DELAY_S = 3;
+    AUTO_LAUNCH_DELAY_S = 0.0;
+    AUTO_DRIVE_DELAY_S = 3.0;
 
     AUTO_DRIVE_TIME_S = 2.0;
     AUTO_DRIVE_SPEED = -0.5;
     AUTO_LAUNCHER_SPEED = 1;
+    startTime = 0.0;
 
     ally = DriverStation.getAlliance();
 
