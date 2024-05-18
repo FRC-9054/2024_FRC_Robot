@@ -91,6 +91,8 @@
 *                 |              |      also tuned thee drive back function to not curve.
 *         V1.8.0  | All          |  Post state comp code. Some attempts to debug autonomous. Still a
 *                 |              |      problem.
+*         V1.9.0  | Quaid        |  Code added to control addressable LEDs. Chase and set all to one
+*                 | Damien       |      color functions.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -134,12 +136,16 @@ import java.util.Optional;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkBase.IdleMode;
+
+import edu.wpi.first.wpilibj.AddressableLED;
+import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.AddressableLED;
 
 public class Robot extends TimedRobot {
   public enum Speed {
@@ -225,6 +231,70 @@ public class Robot extends TimedRobot {
   DigitalInput noteDetectionLimitSwich = new DigitalInput(noteDetectionLimitSwichPin);
   DigitalInput elevatorHomeLimmitSwich = new DigitalInput(elevatorHomeLimmitSwichPin);
 
+  int LEDPort = 9;
+  int LEDLength = 92;
+  // PWM port 9
+  // Must be a PWM header, not MXP or DIO
+  AddressableLED m_led = new AddressableLED(LEDPort);
+  AddressableLEDBuffer m_ledBuffer = new AddressableLEDBuffer(LEDLength);
+  int currentLEDIndex = 0;
+  int delayCounter = 0;
+  int delay = 5;
+
+  void AddressableLEDSetup() {
+    // Reuse buffer
+    // Default to a length of 60, start empty output
+    // Length is expensive to set, so only set it once, then just update data
+    m_led.setLength(m_ledBuffer.getLength());
+
+    // Set the data
+    m_led.setData(m_ledBuffer);
+    m_led.start();
+  }
+
+  void SetLEDsAll(int red, int green, int blue) {
+    for (var i = 0; i < m_ledBuffer.getLength(); i++) {
+      // Sets the specified LED to the RGB values for red
+      m_ledBuffer.setRGB(i, green, red, blue);
+   }
+   m_led.setData(m_ledBuffer);
+  }
+
+  void chaseLEDs(int p_delay, int p_redChase, int p_greenChase, int p_blueChase, int p_redBackground, int p_greenBackground, int p_blueBackground, int p_numSnakes, int p_snakeLength) {
+    // Increment delay counter
+    delayCounter++;
+    // Check if it's time to update LED color
+    if (delayCounter >= p_delay) {
+        // Clear previous LED (set all LEDs to background color)
+        for (int i = 0; i < LEDLength; i++) {
+            m_ledBuffer.setRGB(i, p_greenBackground, p_redBackground, p_blueBackground);
+        }
+
+        // Calculate spacing between snakes
+        int snakeSpacing = LEDLength / p_numSnakes;
+        
+        // Update each snake
+        for (int j = 0; j < p_numSnakes; j++) {
+            int startLEDIndex = (currentLEDIndex + j * snakeSpacing) % LEDLength;
+            for (int i = 0; i < p_snakeLength; i++) { // Assuming each snake is 4 LEDs long
+                int snakeLEDIndex = (startLEDIndex + i) % LEDLength;
+                m_ledBuffer.setRGB(snakeLEDIndex, p_greenChase, p_redChase, p_blueChase);
+            }
+        }
+
+        // Update LED strip
+        m_led.setData(m_ledBuffer);
+        // Increment LED index
+        currentLEDIndex = (currentLEDIndex + 1) % LEDLength;
+        // Reset delay counter
+        delayCounter = 0;
+    }
+}
+
+
+
+
+
   void launchNote(double launchTimeElapsed) {
     double l_launchTimeElapsed = launchTimeElapsed;
     SmartDashboard.putNumber("l_launchTimeElapsed", l_launchTimeElapsed);
@@ -278,6 +348,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit() {
+    AddressableLEDSetup();
     CameraServer.startAutomaticCapture();
 
     m_motorcontroller1.setInverted(false);
@@ -397,6 +468,24 @@ public class Robot extends TimedRobot {
   double AUTO_LAUNCHER_SPEED;
 
   double autonomousStartTime = 0.0;
+
+ int m_rainbowFirstPixelHue = 10;
+
+  private void rainbow() {
+    // For every pixel
+    for (var i = 0; i < m_ledBuffer.getLength(); i++) {
+      // Calculate the hue - hue is easier for rainbows because the color
+      // shape is a circle so only one value needs to precess
+      final var hue = (m_rainbowFirstPixelHue + (i * 180 / m_ledBuffer.getLength())) % 180;
+      // Set the value
+      m_ledBuffer.setHSV(i, hue, 255, 128);
+    }
+    // Increase by to make the rainbow "move"
+    m_rainbowFirstPixelHue += 3;
+    // Check bounds
+    m_rainbowFirstPixelHue %= 180;
+  }
+
 
   void driveBackward() {
     m_robotDrive.tankDrive(.5, .5);   // .5 and .42 maybe?
@@ -1109,6 +1198,12 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
+
+      // Fill the buffer with a rainbow 
+      rainbow();
+      // Set the LEDs
+      m_led.setData(m_ledBuffer);
+
     m_robotDrive.arcadeDrive(-m_controller.getRawAxis(drivetrainSpeedAxis) * motorSpeedLimit,
         -m_controller.getRawAxis(drivetrainRotateAxis) * motorRotateSpeedLimit);
 
@@ -1154,6 +1249,9 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testPeriodic() {
+    // SetLEDsAll(150, 0, 150);
+    //     delay     red green blue chase         red green blue background
+    chaseLEDs(5, 0, 255, 0, 0, 100, 100, 2, 12);
   }
 
 }

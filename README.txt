@@ -96,6 +96,8 @@ Robot code for 2024 FRC game
 *                 |              |      also tuned thee drive back function to not curve.
 *         V1.8.0  | All          |  Post state comp code. Some attempts to debug autonomous. Still a
 *                 |              |      problem.
+*         V1.9.0  | Quaid        |  Code added to control addressable LEDs. Chase and set all to one
+*                 | Damien       |      color functions.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
