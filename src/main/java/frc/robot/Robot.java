@@ -93,6 +93,7 @@
 *                 |              |      problem.
 *         V1.9.0  | Quaid        |  Code added to control addressable LEDs. Chase and set all to one
 *                 | Damien       |      color functions.
+*         V1.10.0 | Quaid        |  Updated vendor libraries.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
