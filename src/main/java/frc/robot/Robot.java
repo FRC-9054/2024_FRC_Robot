@@ -94,6 +94,8 @@
 *         V1.9.0  | Quaid        |  Code added to control addressable LEDs. Chase and set all to one
 *                 | Damien       |      color functions.
 *         V1.10.0 | Quaid        |  Updated vendor libraries.
+*         V1.10.1 | Quaid        |  Renamed controllers to make code more readable, and moved all non
+*                 |              |      drive controlls to the opperator controller.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -176,8 +178,8 @@ public class Robot extends TimedRobot {
 
   private final DifferentialDrive m_robotDrive =
       new DifferentialDrive(m_motorcontroller1, m_motorcontroller3);
-  private final static Joystick m_controller = new Joystick(0);   // note: here is how a controler is created. It will use the same functions as this one but have a different name and number
-  private final static Joystick n_controller = new Joystick(1);
+  private final static Joystick drive_controller = new Joystick(0);   // note: here is how a controler is created. It will use the same functions as this one but have a different name and number
+  private final static Joystick opperator_controller = new Joystick(1);
 
   Optional<Alliance> ally;
 
@@ -554,18 +556,18 @@ public class Robot extends TimedRobot {
   void updateClimber(Logic logicVersion) {
     switch (logicVersion) {
       case OLD:
-        if (n_controller.getPOV() == elevatorExtendFunctionButtonPos) {
+        if (opperator_controller.getPOV() == elevatorExtendFunctionButtonPos) {
           m_climber.set(CLIMER_EXTEND_POWER);
-        } else if (n_controller.getPOV() == elevatorRetractFunctionButtonPos) {
+        } else if (opperator_controller.getPOV() == elevatorRetractFunctionButtonPos) {
           m_climber.set(CLIMER_RETRACT_POWER * -1);
         } else {
           m_climber.set(0);
         }
         break;
       case NEW:
-        if (n_controller.getPOV() == elevatorExtendFunctionButtonPos) {
+        if (opperator_controller.getPOV() == elevatorExtendFunctionButtonPos) {
           extendClimber();
-        } else if (n_controller.getPOV() == elevatorRetractFunctionButtonPos) {
+        } else if (opperator_controller.getPOV() == elevatorRetractFunctionButtonPos) {
           retractClimber();
         } else {
           m_climber.set(0);
@@ -1205,10 +1207,10 @@ public class Robot extends TimedRobot {
       // Set the LEDs
       m_led.setData(m_ledBuffer);
 
-    m_robotDrive.arcadeDrive(-m_controller.getRawAxis(drivetrainSpeedAxis) * motorSpeedLimit,
-        -m_controller.getRawAxis(drivetrainRotateAxis) * motorRotateSpeedLimit);
+    m_robotDrive.arcadeDrive(-drive_controller.getRawAxis(drivetrainSpeedAxis) * motorSpeedLimit,
+        -drive_controller.getRawAxis(drivetrainRotateAxis) * motorRotateSpeedLimit);
 
-    if (m_controller.getRawButton(intakeFunctionButton) && noteDetectionLimitSwich.get()) {
+    if (opperator_controller.getRawButton(intakeFunctionButton) && noteDetectionLimitSwich.get()) {
       m_launchWheel.set(-LAUNCHER_IN_SPEED);
       m_feedWheel.set(-FEEDER_IN_SPEED);
     } else {
@@ -1216,15 +1218,15 @@ public class Robot extends TimedRobot {
       m_feedWheel.set(0);
     }
 
-    if (m_controller.getRawButton(ampFunctionButton)) {
+    if (opperator_controller.getRawButton(ampFunctionButton)) {
       m_feedWheel.set(FEEDER_AMP_SPEED);
       m_launchWheel.set(LAUNCHER_AMP_SPEED);
-    } else if (m_controller.getRawButtonReleased(ampFunctionButton)) {
+    } else if (opperator_controller.getRawButtonReleased(ampFunctionButton)) {
       m_feedWheel.set(0);
       m_launchWheel.set(0);
     }
 
-    Boolean launchButtonPos = m_controller.getRawButton(1);
+    Boolean launchButtonPos = opperator_controller.getRawButton(1);
     SmartDashboard.putBoolean("launchButtonPos", launchButtonPos);
 
     if (launchButtonPos) {
