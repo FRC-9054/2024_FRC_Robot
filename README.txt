@@ -99,6 +99,9 @@ Robot code for 2024 FRC game
 *         V1.9.0  | Quaid        |  Code added to control addressable LEDs. Chase and set all to one
 *                 | Damien       |      color functions.
 *         V1.10.0 | Quaid        |  Updated vendor libraries.
+*         V1.10.1 | Quaid        |  Renamed controllers to make code more readable, and moved all non
+*                 |              |      drive controlls to the opperator controller.
+*         V1.11.0 | Quaid Damien |  Fixed autonomous code. Turned on the limmit swich for the climber.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!

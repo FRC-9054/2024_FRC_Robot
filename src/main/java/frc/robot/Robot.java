@@ -96,6 +96,7 @@
 *         V1.10.0 | Quaid        |  Updated vendor libraries.
 *         V1.10.1 | Quaid        |  Renamed controllers to make code more readable, and moved all non
 *                 |              |      drive controlls to the opperator controller.
+*         V1.11.0 | Quaid Damien |  Fixed autonomous code. Turned on the limmit swich for the climber.
 *          
 *                                     
 *         !!!!!!!!!!UPDATE VERSION HISTORY BEFORE COMMIT!!!!!!!!!!
@@ -183,7 +184,7 @@ public class Robot extends TimedRobot {
 
   Optional<Alliance> ally;
 
-  double autoStartDelay = SmartDashboard.getNumber("Auto Start Delay", 0);
+  double autoStartDelay = SmartDashboard.getNumber("Auto Start Delay", 0);     // note: move to a periodic fn to use
   double autoLaunchDelay = SmartDashboard.getNumber("Auto Launch Delay", 0);
   // NOTE: variables
   // vvvvvvvvvvvvvvv
@@ -314,6 +315,8 @@ public class Robot extends TimedRobot {
   }
 
   private static final String kNothingAuto = "do nothing";
+  private static final String kLaunchAndExitStrait = "launch and drive backwards";
+  private static final String kExitStrait = "drive backwards";
   private static final String kExitFromLeftOrRight = "exit left/right";
   private static final String kLaunch = "launch note";
   private static final String kExitFromCenter = "exit center";
@@ -353,23 +356,29 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     AddressableLEDSetup();
     CameraServer.startAutomaticCapture();
-
+    
+    // NOTE: this sets up the front motors on the drivetrain
     m_motorcontroller1.setInverted(false);
     m_motorcontroller3.setInverted(true); // note: only invert this one because the otheer follows
+    
+    // NOTE: this sets up the rear motors to follow the front motors on the drivetrain
+    m_motorcontroller2.follow(m_motorcontroller1);
+    m_motorcontroller4.follow(m_motorcontroller3);
 
     m_feedWheel.setInverted(true);
     m_launchWheel.setInverted(true);
-
+    
     // m_rollerClaw.setInverted(false);
     m_climber.setInverted(true);
+    
+
+
 
     // UPDATE:
     // UPDATE:
     // UPDATE:
     // UPDATE:
     // UPDATE: UNCOMMENT THE AUTO OPTIONS THAT YOU WANT TO HAVE AVAILABLE
-    m_motorcontroller2.follow(m_motorcontroller1);
-    m_motorcontroller4.follow(m_motorcontroller3);
     m_chooser.setDefaultOption("do nothing", kNothingAuto);
     m_chooser.addOption(kExitFromLeftOrRight, kExitFromLeftOrRight);
     // m_chooser.addOption(kLaunch, kLaunch);
@@ -397,6 +406,8 @@ public class Robot extends TimedRobot {
 
   public void robotPeriodic() {
     SmartDashboard.putNumber("Time (seconds)", Timer.getFPGATimestamp());
+    // get team color
+    // set leds to team color
   }
 
   //  CANSparkBase m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
@@ -546,7 +557,7 @@ public class Robot extends TimedRobot {
 
   void retractClimber() {
     m_climber.set(CLIMER_RETRACT_POWER * -1);
-    if (!elevatorHomeLimmitSwich.get()) {
+    if (elevatorHomeLimmitSwich.get()) {
       m_climber.set(CLIMER_RETRACT_POWER * -1);
     } else {
       m_climber.set(0);
@@ -582,6 +593,9 @@ public class Robot extends TimedRobot {
   void exitFromLeftOrRight(double autoTimeElapsed) {
 
     double step1Time = 3.0;    // drive forward for 3 seconds
+
+    m_feedWheel.set(0);
+    m_launchWheel.set(0);
 
     if (autoTimeElapsed <= autoStartDelay) {
       m_robotDrive.tankDrive(0, 0);
@@ -752,7 +766,7 @@ public class Robot extends TimedRobot {
 
   void launchAndExitFromSpeakerA(double autoTimeElapsed) { // red left and blue right
     double step1time = 1.5;
-    double step2time = 0.0;
+    double step2time = 3.0;
     // double step3time = 0.0;
     // double step4time = 0.0;
     autoStartDelay = 1.0;
@@ -1203,7 +1217,7 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
 
       // Fill the buffer with a rainbow 
-      rainbow();
+      // rainbow();
       // Set the LEDs
       m_led.setData(m_ledBuffer);
 
@@ -1243,7 +1257,7 @@ public class Robot extends TimedRobot {
       previousLaunchButtonPos = launchButtonPos;
     }
 
-    updateClimber(Logic.OLD);
+    updateClimber(Logic.NEW);
   }
 
   @Override
